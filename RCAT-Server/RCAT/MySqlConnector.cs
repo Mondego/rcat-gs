@@ -12,12 +12,12 @@ namespace RCAT
     static class MySqlConnector
     {
 
-        public static MySqlConnection conn;
+        public static String connStr = "server=opensim.ics.uci.edu;user=rcat;database=rcat;port=3306;password=isnotamused;";
+        //public static MySqlConnection conn;
 
         public static void Connect()
         {
-            string connStr = "server=opensim.ics.uci.edu;user=rcat;database=rcat;port=3306;password=isnotamused;";
-            conn = new MySqlConnection(connStr);
+            MySqlConnection conn = new MySqlConnection(connStr);
             try
             {
                 Console.WriteLine("Connecting to MySQL...");
@@ -42,6 +42,7 @@ namespace RCAT
 
         public static void SetPosition(string userName, Position pos)
         {
+            MySqlConnection conn = new MySqlConnection(connStr);
             try
             {
                 conn.Open();
@@ -49,6 +50,7 @@ namespace RCAT
                 string sql = string.Format("INSERT INTO users (`name`, `top`, `left`) VALUES ({0}, {1}, {2}) ON DUPLICATE KEY UPDATE `top`={1},`left`={2}", name, pos.top.ToString(), pos.left.ToString());
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
+                
             }
             catch (Exception ex)
             {
@@ -59,27 +61,31 @@ namespace RCAT
 
         public static int GetCount()
         {
+            MySqlConnection conn = new MySqlConnection(connStr);
+            object result = null;
             try
             {
                 conn.Open();
 
                 string sql = "SELECT COUNT(*) FROM users";
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
-                object result = cmd.ExecuteScalar();
-                if (result != null)
-                    return Convert.ToInt32(result);
+                result = cmd.ExecuteScalar();
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
             conn.Close();
-            return -1;
+
+            if (result != null)
+                return Convert.ToInt32(result);
+            else return -1;
         }
 
 
         public static void RemoveUser(string userName)
         {
+            MySqlConnection conn = new MySqlConnection(connStr);
             try
             {
                 conn.Open();
@@ -87,8 +93,6 @@ namespace RCAT
                 string sql = string.Format("DELETE FROM users WHERE name = {0}", name);
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 MySqlDataReader rdr = cmd.ExecuteReader();
-
-
             }
             catch (Exception ex)
             {
@@ -100,6 +104,8 @@ namespace RCAT
 
         public static User GetUser(string userName)
         {
+            MySqlConnection conn = new MySqlConnection(connStr);
+            User user = null;
             try
             {
                 conn.Open();
@@ -107,7 +113,7 @@ namespace RCAT
                 string sql = string.Format("SELECT * FROM users WHERE name = {0}", name);
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 MySqlDataReader rdr = cmd.ExecuteReader();
-                User user = new User();
+                user = new User();
 
                 if (rdr.Read())
                 {
@@ -115,26 +121,26 @@ namespace RCAT
                     user.pos.top = rdr.GetInt32(1);
                     user.pos.left = rdr.GetInt32(2);
                 }
-                
                 rdr.Close();
-                conn.Close();
-                return user;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
             conn.Close();
-            return null;
+            return user;
         }
 
         public static User[] GetAllUsers()
         {
+            MySqlConnection conn = new MySqlConnection(connStr);
+            User[] allUsers = null;
             try
             {
+                conn.Open();
                 int count = GetCount();
                 int i = 0;
-                User[] allUsers = new User[count];
+                allUsers = new User[count];
 
                 string sql = "SELECT `name`,`top`,`left` FROM users";
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
@@ -151,16 +157,14 @@ namespace RCAT
                     allUsers[i].pos.left = rdr.GetInt32(2);
                     i++;
                 }
-                rdr.Close();
-                conn.Close();
-                return allUsers;
+                rdr.Close();                
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
             conn.Close();
-            return null;
+            return allUsers;
         }
 
         public static ulong IPStringToulong(String userName)
