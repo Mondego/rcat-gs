@@ -73,6 +73,8 @@ namespace RCAT
             me.Context = AContext;
 
             onlineUsers.Add(me.Name, me.Context);
+
+            SendAllUsers(AContext);
         }
 
         /// <summary>
@@ -144,8 +146,8 @@ namespace RCAT
                     Broadcast(JsonConvert.SerializeObject(r), MySqlConnector.GetAllUsers());
                     MySqlConnector.RemoveUser(user.Name);
                 }
-
-                BroadcastNameList();
+                else
+                    Console.WriteLine("ERROR: User not found!");
             }
             catch (Exception ex)
             {
@@ -159,12 +161,9 @@ namespace RCAT
         /// <param name="AContext">The user's connection context</param>
         private static void SetPosition(Position pos, string userName)
         {
-            // Using hashtable
-            //User u = onlineUsers[userName];
-            //u.pos = pos;
             Response r = new Response();
 
-            r.Type = ResponseType.Message;
+            r.Type = ResponseType.Position;
             r.Data = new { Name = userName, Position = pos };
 
             MySqlConnector.SetPosition(userName, pos);
@@ -173,12 +172,13 @@ namespace RCAT
 
         }
         /// <summary>
-        /// Broadcasts an error message to the client who caused the error
+        /// Sends an error message to the client who caused the error
         /// </summary>
         /// <param name="ErrorMessage">Details of the error</param>
         /// <param name="AContext">The user's connection context</param>
         private static void SendError(string ErrorMessage, UserContext AContext)
         {
+            Console.WriteLine("Error Message: " + ErrorMessage);
             Response r = new Response();
 
             r = new Response();
@@ -189,22 +189,18 @@ namespace RCAT
         }
 
         /// <summary>
-        /// Broadcasts a list of all online users to all online users
+        /// Informs a user of all the existing clients
         /// </summary>
-        private static void BroadcastNameList()
+        private static void SendAllUsers(UserContext AContext)
         {
             Response r = new Response();
             r = new Response();
-            r.Type = ResponseType.UserCount;
-
-            // Using Hashtable
-            //User[] arr = new User[onlineUsers.Count];
-            //onlineUsers.Values.CopyTo(arr,0);
+            r.Type = ResponseType.AllUsers;
 
             // Using database
             User[] arr = MySqlConnector.GetAllUsers();
             r.Data = new { Users = arr };
-            Broadcast(JsonConvert.SerializeObject(r), arr);
+            AContext.Send(JsonConvert.SerializeObject(r));
         }
 
         /// <summary>
@@ -230,8 +226,8 @@ namespace RCAT
         {
             Connection = 0,
             Disconnect = 1,
-            Message = 2,
-            UserCount = 3,
+            Position = 2,
+            AllUsers = 3,
             Error = 255
         }
 
