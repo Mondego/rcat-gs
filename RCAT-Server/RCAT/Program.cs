@@ -142,6 +142,7 @@ namespace RCAT
                     r.Data = new { Name = user.Name };
 
                     Broadcast(JsonConvert.SerializeObject(r), MySqlConnector.GetAllUsers());
+                    MySqlConnector.RemoveUser(user.Name);
                 }
 
                 BroadcastNameList();
