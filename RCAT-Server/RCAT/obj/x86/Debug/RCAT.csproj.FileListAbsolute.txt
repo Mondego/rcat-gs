@@ -16,3 +16,12 @@ C:\Users\Arthur\Dropbox\RESTVW\RCAT\RCAT\bin\Debug\RCAT.pdb
 C:\Users\Arthur\Dropbox\RESTVW\RCAT\RCAT\bin\Debug\Alchemy.dll
 C:\Users\Arthur\Dropbox\RESTVW\RCAT\RCAT\bin\Debug\log4net.dll
 C:\Users\Arthur\Dropbox\RESTVW\RCAT\RCAT\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\RCAT\bin\Debug\RCAT.exe.config
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\RCAT\obj\x86\Debug\RCAT.exe
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\RCAT\obj\x86\Debug\RCAT.pdb
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\RCAT\bin\Debug\RCAT.exe
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\RCAT\bin\Debug\RCAT.pdb
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\RCAT\bin\Debug\Alchemy.dll
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\RCAT\bin\Debug\log4net.dll
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\RCAT\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\RCAT\obj\x86\Debug\ResolveAssemblyReference.cache

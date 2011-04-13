@@ -127,22 +127,29 @@ namespace RCAT
         /// <param name="AContext">The user's connection context</param>
         public static void OnDisconnect(UserContext AContext)
         {
-            Console.WriteLine("Client Disconnected : " + AContext.ClientAddress.ToString());
-
-            User user = MySqlConnector.GetUser(AContext.ClientAddress.ToString());
-
-            Response r = new Response();
-
-            if (!String.IsNullOrEmpty(user.Name))
+            try
             {
-                r = new Response();
-                r.Type = ResponseType.Disconnect;
-                r.Data = new { Name = user.Name };
+                Console.WriteLine("Client Disconnected : " + AContext.ClientAddress.ToString());
 
-                Broadcast(JsonConvert.SerializeObject(r), MySqlConnector.GetAllUsers());
+                User user = MySqlConnector.GetUser(AContext.ClientAddress.ToString());
+
+                Response r = new Response();
+
+                if (!String.IsNullOrEmpty(user.Name))
+                {
+                    r = new Response();
+                    r.Type = ResponseType.Disconnect;
+                    r.Data = new { Name = user.Name };
+
+                    Broadcast(JsonConvert.SerializeObject(r), MySqlConnector.GetAllUsers());
+                }
+
+                BroadcastNameList();
             }
-
-            BroadcastNameList();
+            catch (Exception ex)
+            {
+                System.Console.WriteLine(ex.StackTrace);
+            }
         }
         /// <summary>
         /// Broadcasts a chat message to all online usrs

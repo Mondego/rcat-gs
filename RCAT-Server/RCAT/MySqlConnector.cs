@@ -22,6 +22,9 @@ namespace RCAT
             {
                 Console.WriteLine("Connecting to MySQL...");
                 conn.Open();
+                string sql = string.Format("DELETE FROM users");
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.ExecuteNonQuery();
                 // Perform databse operations
             }
             catch (Exception ex)
@@ -81,7 +84,7 @@ namespace RCAT
             {
                 conn.Open();
                 ulong name = IPStringToulong(userName);
-                string sql = string.Format("DELETE FROM users WHERE `name`={0}", name);
+                string sql = string.Format("DELETE FROM users WHERE name = {0}", name);
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 MySqlDataReader rdr = cmd.ExecuteReader();
 
@@ -101,15 +104,17 @@ namespace RCAT
             {
                 conn.Open();
                 ulong name = IPStringToulong(userName);
-                string sql = string.Format("SELECT FROM users WHERE `name`={0}", name);
+                string sql = string.Format("SELECT * FROM users WHERE name = {0}", name);
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 MySqlDataReader rdr = cmd.ExecuteReader();
                 User user = new User();
-                rdr.Read();
-                
-                user.Name = userName;
-                user.pos.top = rdr.GetInt32(1);
-                user.pos.left = rdr.GetInt32(2);
+
+                if (rdr.Read())
+                {
+                    user.Name = userName;
+                    user.pos.top = rdr.GetInt32(1);
+                    user.pos.left = rdr.GetInt32(2);
+                }
                 
                 rdr.Close();
                 conn.Close();
@@ -135,9 +140,10 @@ namespace RCAT
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 MySqlDataReader rdr = cmd.ExecuteReader();
 
-                while (rdr.Read())
+                while (rdr.Read() && i <= count)
                 {
                     ulong userName = rdr.GetUInt64(0);
+                    allUsers[i] = new User();
                     allUsers[i].Name = IPulongToString(userName);
 
                     //allUsers[i].Name = rdr.GetString(0);
