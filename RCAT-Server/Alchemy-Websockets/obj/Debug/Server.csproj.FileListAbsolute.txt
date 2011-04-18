@@ -1,0 +1,21 @@
+C:\OpenSim\Alchemy-Websockets\obj\Debug\ResolveAssemblyReference.cache
+C:\OpenSim\Alchemy-Websockets\bin\Debug\Alchemy.config
+C:\OpenSim\Alchemy-Websockets\bin\Debug\Alchemy.dll
+C:\OpenSim\Alchemy-Websockets\bin\Debug\Alchemy.pdb
+C:\OpenSim\Alchemy-Websockets\bin\Debug\log4net.dll
+C:\OpenSim\Alchemy-Websockets\obj\Debug\Alchemy.dll
+C:\OpenSim\Alchemy-Websockets\obj\Debug\Alchemy.pdb
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\Alchemy-Websockets\bin\Debug\Alchemy.config
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\Alchemy-Websockets\bin\Debug\Alchemy.dll
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\Alchemy-Websockets\bin\Debug\Alchemy.pdb
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\Alchemy-Websockets\bin\Debug\log4net.dll
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\Alchemy-Websockets\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\Alchemy-Websockets\obj\Debug\Alchemy.dll
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\Alchemy-Websockets\obj\Debug\Alchemy.pdb
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\Alchemy-Websockets\bin\Debug\Alchemy.config
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\Alchemy-Websockets\bin\Debug\Alchemy.dll
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\Alchemy-Websockets\bin\Debug\Alchemy.pdb
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\Alchemy-Websockets\bin\Debug\log4net.dll
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\Alchemy-Websockets\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\Alchemy-Websockets\obj\Debug\Alchemy.dll
+C:\Users\Arthur Valadares\Documents\My Dropbox\RESTVW\RCAT-Server\Alchemy-Websockets\obj\Debug\Alchemy.pdb

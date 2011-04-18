@@ -39,6 +39,7 @@ namespace RCAT
         {
             // Initialize the server on port 81, accept any IPs, and bind events.
             WSServer AServer = new WSServer(81, IPAddress.Any);
+            AServer.Log.Logger.IsEnabledFor(log4net.Core.Level.Debug);
             AServer.DefaultOnReceive = new OnEventDelegate(OnReceive);
             AServer.DefaultOnSend = new OnEventDelegate(OnSend);
             AServer.DefaultOnConnect = new OnEventDelegate(OnConnect);
