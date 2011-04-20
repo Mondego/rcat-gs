@@ -32,13 +32,31 @@
 	background-color: #dfd;
 	z-index: 0;
 }
+#disconnect, #connect{
+	top: 10px;
+	right: 100px;
+	position: absolute;
+	z-index: 2;
+}
 </style>
 <script src="http://code.jquery.com/jquery-1.5.js"></script>
 <script src="http://www.ics.uci.edu/~tdebeauv/rCAT/json2.js"></script>
 <script src="http://www.ics.uci.edu/~tdebeauv/rCAT/jshashtable-2.1.js"></script>
 
-<script>
+</head>
 
+<body>
+
+<p id="textZone"></p>
+
+<div id="avatar"></div>
+
+<div id="chatLog"></div>
+
+<button id="disconnect" style="display:none">Disconnect</button>
+<button id="connect">Connect</button>
+
+<script type="text/javascript">
 // ====================== CLIENT GAME STATE ==============
 
 var usersTable = new Hashtable(); //will contain users' names and positions, indexed by name
@@ -60,11 +78,13 @@ if(!("WebSocket" in window)){
 
 function connect(){
 	//var host = "ws://opensim.ics.uci.edu:81/websocket";	
-	//var host = "ws://128.195.4.46:81/websocket"; //opensim.ics.uci.edu
-	var host = "ws://chateau.ics.uci.edu:81/websocket"; 
+	var host = "ws://128.195.4.46:81/websocket"; //opensim.ics.uci.edu
+	//var host = "ws://chateau.ics.uci.edu:81/websocket"; 
 	try {
 		socket = new WebSocket(host);
 		log('<dt>Socket Status:</dt><dd>'+socket.readyState+'</dd>');
+		$('#connect').hide();
+		$('#disconnect').show();
 		socket.onopen = function(){
 			log('<dt>Socket Status</dt><dd>'+socket.readyState+' (onopen); Host: '+ host +'</dd>');
 		}
@@ -76,7 +96,7 @@ function connect(){
 					receivePos(userPos.Data.Name, userPos.Data.Position.top, userPos.Data.Position.left);
 					break;
 				default:
-					log('<dt>Error</dt><dd>Unknown msg.Type in connect()</dd>');
+					log('<dt>Error</dt><dd>Unknown msg.Type ('+ userPos.Type +') in connect().</dd>');
 					break;
 				}
 		}
@@ -88,6 +108,13 @@ function connect(){
 	}
 }
 
+function disconnect() {
+	socket.close();
+	log('<dt>Socket Status:</dt><dd>'+socket.readyState+'</dd>');
+	log("Connection closed.");
+	$('#disconnect').hide();
+	$('#connect').show();
+}
 
 // when I receive a position from the server
 function receivePos(name, top, left){
@@ -142,9 +169,6 @@ function sendPos(){
 	}
 }
 
-//things to do when loading the JavaScript file
-connect();
-
 
 // ==================== GRAPHICS ========================
 var POS_SHIFT = 20; // the movement granularity
@@ -185,16 +209,17 @@ function doKeyPress(e) {
 
 document.onkeypress = doKeyPress;
 
+$('#disconnect').bind('click', function(e) {
+	//e.preventDefault();
+	disconnect();
+});
+
+$('#connect').bind('click', function(e) {
+	//e.preventDefault();
+	connect();
+});
+
+
 </script>
-</head>
-
-<body>
-
-<p id="textZone"></p>
-
-<div id="avatar"></div>
-
-<div id="chatLog"></div>
-
 </body>
 </html>
