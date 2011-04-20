@@ -37,7 +37,6 @@ namespace Alchemy.Server.Classes
     {
         None = -1,
         WebSocket = 0,
-        FlashSocket = 1
     }
 
     /// <summary>
@@ -143,9 +142,6 @@ namespace Alchemy.Server.Classes
                 {
                     case "websocket":
                         this.Protocol = Protocol.WebSocket;
-                        break;
-                    case "flashsocket":
-                        this.Protocol = Protocol.FlashSocket;
                         break;
                     default:
                         this.Protocol = Protocol.None;

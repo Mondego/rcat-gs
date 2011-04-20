@@ -77,46 +77,25 @@ namespace Alchemy.Server.Handlers
         /// <param name="AContext">The user context.</param>
         public void ProcessHeader(Context AContext)
         {
-            Encoding testenc = new ASCIIEncoding();
-            Encoding iso = Encoding.GetEncoding("ISO-8859-1");
-
-            string Test1 = testenc.GetString(AContext.Buffer);
-            string Test2 = iso.GetString(AContext.Buffer);
             string Data = AContext.UserContext.Encoding.GetString(AContext.Buffer, 0, AContext.ReceivedByteCount);
-            //Check first to see if this is a flash socket XML request.
-            if (Data == "<policy-file-request/>\0")
+
+            AContext.Header = new Header(Data);
+            switch (AContext.Header.Protocol)
             {
-                try
-                {
-                    //if it is, we access the Access Policy Server instance to send the appropriate response.
-                    AContext.Server.AccessPolicyServer.SendResponse(AContext.Connection);
-                }
-                catch { }
-                AContext.Dispose();
+                case Protocol.WebSocket:
+                    AContext.Handler = WebSocketHandler.Instance;
+                    break;
+                default:
+                    AContext.Header.Protocol = Protocol.None;
+                    break;
             }
-            else//If it isn't, process http/websocket header as normal.
+            if (AContext.Header.Protocol != Protocol.None)
             {
-                AContext.Header = new Header(Data);
-                switch (AContext.Header.Protocol)
-                {
-                    case Protocol.WebSocket:
-                        AContext.Handler = WebSocketHandler.Instance;
-                        break;
-                    case Protocol.FlashSocket:
-                        AContext.Handler = WebSocketHandler.Instance;
-                        break;
-                    default:
-                        AContext.Header.Protocol = Protocol.None;
-                        break;
-                }
-                if (AContext.Header.Protocol != Protocol.None)
-                {
-                    AContext.Handler.HandleRequest(AContext);
-                }
-                else
-                {
-                    AContext.UserContext.Send(Response.NotImplemented, true);
-                }
+                AContext.Handler.HandleRequest(AContext);
+            }
+            else
+            {
+                AContext.UserContext.Send(Response.NotImplemented, true);
             }
         }
 

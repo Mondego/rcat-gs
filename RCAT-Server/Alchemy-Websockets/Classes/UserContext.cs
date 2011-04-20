@@ -219,6 +219,10 @@ namespace Alchemy.Server.Classes
         /// </summary>
         public byte[] Buffer = null;
         /// <summary>
+        /// Holds appended message from buffer, encoded to string
+        /// </summary>
+        public StringBuilder sb = new StringBuilder();
+        /// <summary>
         /// How many pings in a row we've had from this client, indicates inactivity.
         /// </summary>
         public int Pings = 0;
@@ -248,7 +252,7 @@ namespace Alchemy.Server.Classes
         /// </summary>
         public Header Header = null;
 
-        private int _BufferSize = 512;
+        private int _BufferSize = 4096;
 
         /// <summary>
         /// Gets or sets the size of the buffer.

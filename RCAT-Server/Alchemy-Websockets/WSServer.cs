@@ -58,7 +58,7 @@ namespace Alchemy.Server
         /// This Semaphore protects out clients variable on increment/decrement when a user connects/disconnects.
         /// </summary>
         private SemaphoreSlim ClientLock = new SemaphoreSlim(1);
-        private int DefaultBufferSize = 512;
+        private int DefaultBufferSize = 4096;
         private TcpListener Listener = null;
 
         /// <summary>
@@ -79,13 +79,6 @@ namespace Alchemy.Server
         public OnEventDelegate DefaultOnSend = (x) => { };
 
         /// <summary>
-        /// This is the Flash Access Policy Server. It allows us to facilitate flash socket connections much more quickly in most cases.
-        /// Don't mess with it through here. It's only public so we can access it later from all the IOCPs.
-        /// </summary>
-        public APServer AccessPolicyServer = null;
-
-
-        /// <summary>
         /// 
         /// </summary>
         public ILog Log = LogManager.GetLogger("Alchemy.Log");
@@ -104,13 +97,6 @@ namespace Alchemy.Server
         /// </summary>
         public TimeSpan TimeOut = TimeSpan.FromMinutes(1);
         public int MaxPingsInSequence = 0;
-
-        /// <summary>
-        /// Enables or disables the Flash Access Policy Server(APServer).
-        /// This is used when you would like your app to only listen on a single port rather than 2.
-        /// Warning, any flash socket connections will have an added delay on connection due to the client looking to port 843 first for the connection restrictions.
-        /// </summary>
-        public bool FlashAPEnabled = true;
 
         /// <summary>
         /// Gets the client count.
@@ -244,13 +230,6 @@ namespace Alchemy.Server
             {
                 try
                 {
-                    AccessPolicyServer = new APServer(ListenerAddress, OriginHost, Port);
-
-                    if (FlashAPEnabled)
-                    {
-                        AccessPolicyServer.Start();
-                    }
-
                     Listener = new TcpListener(ListenerAddress, Port);
                     ThreadPool.QueueUserWorkItem(Listen, null);
                 }
@@ -269,13 +248,10 @@ namespace Alchemy.Server
                 try
                 {
                     Listener.Stop();
-                    if((AccessPolicyServer != null) && (FlashAPEnabled))
-                        AccessPolicyServer.Stop();
                 }
                 catch { /* Ignore */ }
             }
             Listener = null;
-            AccessPolicyServer = null;
             Log.Info("Alchemy Server Stopped");
         }
 
@@ -332,6 +308,7 @@ namespace Alchemy.Server
                 ClientLock.Release();
 
                 using (Context AContext = new Context())
+                //each client has its own context
                 {
                     AContext.Server = this;
                     AContext.Connection = AConnection;
@@ -344,11 +321,12 @@ namespace Alchemy.Server
                     AContext.UserContext.OnConnect();
                     try
                     {
-                        while (AContext.Connection.Connected)
+                        // message listener, per client
+                        while (AContext.Connection.Connected) //BUG: it's null the 2nd time runClient is called
                         {
                             if (AContext.ReceiveReady.Wait(TimeOut))
                             {
-                                AContext.Connection.Client.BeginReceive(AContext.Buffer, 0, AContext.Buffer.Length, SocketFlags.None, DoReceive, AContext);
+                                AContext.Connection.Client.BeginReceive(AContext.Buffer, 0, AContext.Buffer.Length, SocketFlags.None, new AsyncCallback(DoReceive), AContext);
                             }
                             else
                             {
@@ -372,22 +350,31 @@ namespace Alchemy.Server
         private void DoReceive(IAsyncResult AResult)
         {
             Context AContext = (Context)AResult.AsyncState;
+            int received = 0;
+
             AContext.Reset();
             try
             {
-                AContext.ReceivedByteCount = AContext.Connection.Client.EndReceive(AResult);
+                received = AContext.Connection.Client.EndReceive(AResult);
+                AContext.ReceivedByteCount = received;
             }
             catch (Exception e) { Log.Error("Client Forcefully Disconnected", e); }
 
-            if (AContext.ReceivedByteCount > 0)
+            if (received > 0)
             {
-                AContext.ReceiveReady.Release();
+                AContext.sb.Append(UTF8Encoding.UTF8.GetString(AContext.Buffer, 0, received));
+                AContext.Connection.Client.BeginReceive(AContext.Buffer, 0, AContext.Buffer.Length, SocketFlags.None, new AsyncCallback(DoReceive), AContext);
                 AContext.Handler.HandleRequest(AContext);
+                AContext.ReceiveReady.Release();
+                if (received == DefaultBufferSize)
+                {
+                    throw new Exception("[WS_SERVER]: HTTP Connect packet reached maximum size. Are we missing data?");
+                }
             }
             else
             {
-                AContext.Dispose();
                 AContext.ReceiveReady.Release();
+                AContext.Dispose();
             }
         }
 

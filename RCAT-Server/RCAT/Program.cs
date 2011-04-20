@@ -85,7 +85,7 @@ namespace RCAT
         /// <param name="AContext">The user's connection context</param>
         public static void OnReceive(UserContext AContext)
         {
-            Console.WriteLine("Received Data From :" + AContext.ClientAddress.ToString());
+            Console.WriteLine("Received Data From :" + AContext.ClientAddress.ToString()+ " | " + AContext.DataFrame.ToString());
 
             try
             {
@@ -186,7 +186,7 @@ namespace RCAT
             r.Type = ResponseType.Error;
             r.Data = new { Message = ErrorMessage };
 
-            AContext.Send(JsonConvert.SerializeObject(r));
+            //AContext.Send(JsonConvert.SerializeObject(r));
         }
 
         /// <summary>
