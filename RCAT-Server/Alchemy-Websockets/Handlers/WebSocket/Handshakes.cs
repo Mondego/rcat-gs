@@ -74,7 +74,6 @@ namespace Alchemy.Server.Handlers.WebSocket
             Origin = AHeader["origin"];
             Host = AHeader["host"];
             Cookies = AHeader.Cookies;
-            System.Console.WriteLine(AHeader.ToString());
         }
 
         /// <summary>

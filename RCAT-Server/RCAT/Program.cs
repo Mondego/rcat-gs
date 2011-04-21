@@ -10,7 +10,7 @@ using System.Collections;
 using System.Data;
 using MySql.Data;
 using MySql.Data.MySqlClient;
-
+using System.Threading;
 namespace RCAT
 {
     class Program
@@ -49,6 +49,14 @@ namespace RCAT
             AServer.Start();
 
             MySqlConnector.Connect();
+
+            int workerThreads;
+            int portThreads;
+
+            ThreadPool.GetMaxThreads(out workerThreads, out portThreads);
+            Console.WriteLine("\nMaximum worker threads: \t{0}" +
+                "\nMaximum completion port threads: {1}",
+                workerThreads, portThreads);
 
             // Accept commands on the console and keep it alive
             string Command = string.Empty;
@@ -101,6 +109,7 @@ namespace RCAT
             }
             catch (Exception e) // Bad JSON! For shame.
             {
+                Console.WriteLine("Failed to parse JSON");
                 Response r = new Response();
                 r.Type = ResponseType.Error;
                 r.Data = new { Message = e.Message };

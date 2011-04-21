@@ -14,7 +14,7 @@ namespace RCAT
 
         public static String connStr = "server=opensim.ics.uci.edu;user=rcat;database=rcat;port=3306;password=isnotamused;";
         //public static MySqlConnection conn;
-
+        
         public static void Connect()
         {
             MySqlConnection conn = new MySqlConnection(connStr);
@@ -173,9 +173,6 @@ namespace RCAT
             IPAddress myIp = IPAddress.Parse(splitted[0]);
             byte[] myBytes = myIp.GetAddressBytes();
             
-            Console.WriteLine("Size of myBytes: " + myBytes.Length.ToString());
-            Console.WriteLine(myBytes.ToString());
-
             int tmpAddress = BitConverter.ToInt32(myBytes, 0);
             ulong intAddress = (ulong)tmpAddress;
 

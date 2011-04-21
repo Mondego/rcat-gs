@@ -129,14 +129,15 @@ namespace Alchemy.Server.Handlers
                 AsyncCallback ACallback = EndSend;
                 if (Close)
                     ACallback = EndSendAndClose;
-                AContext.SendReady.Wait();
+                //AContext.SendReady.Wait();
                 try
                 {
                     AContext.Connection.Client.BeginSend(WrappedData, 0, WrappedData.Length, SocketFlags.None, ACallback, AContext);
                 }
                 catch
                 {
-                    AContext.SendReady.Release();
+                    Console.WriteLine("[WebSocketHandler]: Exception sending");
+                    //AContext.SendReady.Release();
                 }
         }
 
@@ -150,11 +151,12 @@ namespace Alchemy.Server.Handlers
             try
             {
                 AContext.Connection.Client.EndSend(AResult);
-                AContext.SendReady.Release();
+                //AContext.SendReady.Release();
             }
             catch
             {
-                AContext.SendReady.Release(); 
+                Console.WriteLine("[WebSocketHandler]: Exception end send");
+                //AContext.SendReady.Release(); 
             }
             AContext.UserContext.OnSend();
         }
@@ -169,11 +171,12 @@ namespace Alchemy.Server.Handlers
             try
             {
                 AContext.Connection.Client.EndSend(AResult);
-                AContext.SendReady.Release();
+                //AContext.SendReady.Release();
             }
             catch
             {
-               AContext.SendReady.Release();
+                Console.WriteLine("[WebSocketHandler]: Exception end send close");
+               //AContext.SendReady.Release();
             }
             AContext.UserContext.OnSend();
             AContext.Dispose();
