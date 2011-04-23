@@ -31,7 +31,7 @@ namespace Proxy
         /// <param name="Data">The data.</param>
         /// <param name="AContext">The user context.</param>
         /// <param name="Close">if set to <c>true</c> [close].</param>
-        public override void Send(byte[] Data)
+        public void Send(byte[] Data)
         {
             AsyncCallback ACallback = EndSend;
             try
@@ -49,7 +49,7 @@ namespace Proxy
         /// Ends the send.
         /// </summary>
         /// <param name="AResult">The Async result.</param>
-        public override void EndSend(IAsyncResult AResult)
+        public void EndSend(IAsyncResult AResult)
         {
             ServerContext SContext = (ServerContext)AResult.AsyncState;
             try

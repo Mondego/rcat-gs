@@ -13,21 +13,39 @@ using MySql.Data.MySqlClient;
 using System.Threading;
 namespace RCAT
 {
-    public struct ClientBroadcast
+
+    /// <summary>
+    /// Defines the type of response to send back to the client for parsing logic
+    /// </summary>
+    public enum ResponseType : int
     {
-        public string data;
-        public string[] clients;
+        Connection = 0,
+        Disconnect = 1,
+        Position = 2,
+        AllUsers = 3,
+        Error = 255
     }
 
-    public struct ClientConnection
+    /// <summary>
+    /// Defines the response object to send back to the client
+    /// </summary>
+    public class Message
     {
-        public bool connected;
-        public string client;
+        public ResponseType Type { get; set; }
+        public dynamic Data { get; set; }
+    }
+
+    /// <summary>
+    /// Structure for sending broadcast information from Server to Clients. Contains the data to be sent and an array of clients that should receive it.
+    /// </summary>
+    public struct ClientBroadcast
+    {
+        public dynamic data;
+        public string[] clients;
     }
 
     class Program
     {
-
         /// <summary>
         /// Defines a type of command that the client sends to the server
         /// </summary>
@@ -122,7 +140,7 @@ namespace RCAT
             catch (Exception e) // Bad JSON! For shame.
             {
                 Console.WriteLine("Failed to parse JSON");
-                Response r = new Response();
+                Message r = new Message();
                 r.Type = ResponseType.Error;
                 r.Data = new { Message = e.Message };
 
@@ -157,11 +175,11 @@ namespace RCAT
 
                 User user = MySqlConnector.GetUser(AContext.ClientAddress.ToString());
 
-                Response r = new Response();
+                Message r = new Message();
 
                 if (!String.IsNullOrEmpty(user.Name))
                 {
-                    r = new Response();
+                    r = new Message();
                     r.Type = ResponseType.Disconnect;
                     r.Data = new { Name = user.Name };
 
@@ -183,7 +201,7 @@ namespace RCAT
         /// <param name="AContext">The user's connection context</param>
         private static void SetPosition(Position pos, string userName)
         {
-            Response r = new Response();
+            Message r = new Message();
 
             r.Type = ResponseType.Position;
             r.Data = new { Name = userName, Position = pos };
@@ -201,9 +219,9 @@ namespace RCAT
         private static void SendError(string ErrorMessage, UserContext AContext)
         {
             Console.WriteLine("Error Message: " + ErrorMessage);
-            Response r = new Response();
+            Message r = new Message();
 
-            r = new Response();
+            r = new Message();
             r.Type = ResponseType.Error;
             r.Data = new { Message = ErrorMessage };
 
@@ -215,8 +233,8 @@ namespace RCAT
         /// </summary>
         private static void SendAllUsers(UserContext AContext)
         {
-            Response r = new Response();
-            r = new Response();
+            Message r = new Message();
+            r = new Message();
             r.Type = ResponseType.AllUsers;
 
             // Using database
@@ -240,27 +258,6 @@ namespace RCAT
                 user.Send(message);
             }
         }
-
-        /// <summary>
-        /// Defines the type of response to send back to the client for parsing logic
-        /// </summary>
-        public enum ResponseType : int
-        {
-            Connection = 0,
-            Disconnect = 1,
-            Position = 2,
-            AllUsers = 3,
-            Error = 255
-        }
-
-        /// <summary>
-        /// Defines the response object to send back to the client
-        /// </summary>
-        public class Response
-        {
-            public ResponseType Type { get; set; }
-            public dynamic Data { get; set; }
-        }   
     }
 }
 

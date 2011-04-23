@@ -10,6 +10,8 @@ using Alchemy.Server.Classes;
 
 namespace Proxy
 {
+    
+
     public class GameServer
     {
         protected static TcpListener serverListener = null;
@@ -25,7 +27,7 @@ namespace Proxy
 
         protected void RegisterProxyMethods()
         {
-            Proxy.sendSetPositionToServer = Send;
+            Proxy.sendSetPositionToServer = SendPosition;
             Proxy.sendClientDisconnectToServer = SendClientDisconnect;
             Proxy.sendClientConnectToServer = SendClientConnect;
         }
@@ -131,21 +133,27 @@ namespace Proxy
         }
 
         // Sends client data to the server
-        public void Send(User client)
+        public void SendPosition(User client)
         {
+            ServerContext server = clientPerServer[client.Name];
 
+            Message resp = new Message();
+            resp.Type = ResponseType.Position;
+            resp.Data = client.pos;
+
+            server.Send(UTF8Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(resp)));
         }
 
         public void SendClientConnect(UserContext client)
         {
             ServerContext server = PickServer();
             clientPerServer.Add(client.ClientAddress.ToString(), server);
-            
-            ClientConnection conn;
-            conn.client = client.ClientAddress.ToString();
-            conn.connected = true;
 
-            server.Send(UTF8Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(conn)));
+            Message resp = new Message();
+            resp.Type = ResponseType.Connection;
+            resp.Data = client.ClientAddress.ToString();
+
+            server.Send(UTF8Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(resp)));
         }
 
         protected ServerContext PickServer()
@@ -161,12 +169,12 @@ namespace Proxy
         {
             ServerContext server = clientPerServer[client.ClientAddress.ToString()];
             clientPerServer.Remove(client.ClientAddress.ToString());
-            
-            ClientConnection conn;
-            conn.client = client.ClientAddress.ToString();
-            conn.connected = false;
 
-            server.Send(UTF8Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(conn)));
+            Message resp = new Message();
+            resp.Type = ResponseType.Disconnect;
+            resp.Data = client.ClientAddress.ToString();
+
+            server.Send(UTF8Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(resp)));
         }
 
         public void Stop()
