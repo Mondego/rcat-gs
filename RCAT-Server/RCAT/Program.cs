@@ -13,6 +13,18 @@ using MySql.Data.MySqlClient;
 using System.Threading;
 namespace RCAT
 {
+    public struct ClientBroadcast
+    {
+        public string data;
+        public string[] clients;
+    }
+
+    public struct ClientConnection
+    {
+        public bool connected;
+        public string client;
+    }
+
     class Program
     {
 

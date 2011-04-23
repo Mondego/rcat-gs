@@ -15,8 +15,6 @@ namespace Proxy
 
         public TcpClient serverConnection = null;
 
-        public ServerHandler Handler = new ServerHandler();
-
         public bool Connected = true;
 
         public byte[] Buffer = null;
@@ -26,6 +24,45 @@ namespace Proxy
         public int BufferSize = 4096;
 
         public GameServer gameServer = null;
+
+        /// <summary>
+        /// Sends the specified data.
+        /// </summary>
+        /// <param name="Data">The data.</param>
+        /// <param name="AContext">The user context.</param>
+        /// <param name="Close">if set to <c>true</c> [close].</param>
+        public override void Send(byte[] Data)
+        {
+            AsyncCallback ACallback = EndSend;
+            try
+            {
+                serverConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.None, ACallback, this);
+            }
+            catch
+            {
+                Console.WriteLine("[ServerContext]: Exception sending");
+                //AContext.SendReady.Release();
+            }
+        }
+
+        /// <summary>
+        /// Ends the send.
+        /// </summary>
+        /// <param name="AResult">The Async result.</param>
+        public override void EndSend(IAsyncResult AResult)
+        {
+            ServerContext SContext = (ServerContext)AResult.AsyncState;
+            try
+            {
+                SContext.serverConnection.Client.EndSend(AResult);
+                //AContext.SendReady.Release();
+            }
+            catch
+            {
+                Console.WriteLine("[ServerContext]: Exception end send");
+                //AContext.SendReady.Release(); 
+            }
+        }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

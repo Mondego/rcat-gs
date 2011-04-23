@@ -44,6 +44,7 @@ namespace Proxy
 
         public void Stop()
         {
+            clientListener.Stop();
         }
     }
 }

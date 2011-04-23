@@ -9,15 +9,40 @@ namespace Proxy
 {
     public class Proxy
     {
+        //
         // Delegates from Server to Clients
-        public static delegate void SendPosToClients(User[] users);
+        //
 
+        /// <summary>
+        /// Sends data from server to specified clients. 
+        /// </summary>
+        /// <param name="users"></param>
+        public delegate void BroadcastToClients(ClientBroadcast broadcast);
+
+        //
         // Delegates from Clients to Server
-        public static delegate void SendSetPosToServer(User user);
-        public static delegate void SendClientDisconnectToServer(UserContext client);
-        public static delegate void SendClientConnectToServer(UserContext client);
+        //
 
-        public static SendPosToClients sendPositionToClients;
+        /// <summary>
+        /// Sends a new client position to update the server
+        /// </summary>
+        /// <param name="user"></param>
+        public delegate void SendSetPosToServer(User user);
+
+        /// <summary>
+        /// Informs server of a client disconnection
+        /// </summary>
+        /// <param name="client"></param>
+        public delegate void SendClientDisconnectToServer(UserContext client);
+
+        /// <summary>
+        /// Informs server of a client connection
+        /// </summary>
+        /// <param name="client"></param>
+        public delegate void SendClientConnectToServer(UserContext client);
+
+        // Gameserver and Clientserver are responsible to implement these methods
+        public static BroadcastToClients broadcastToClients;
         public static SendSetPosToServer sendSetPositionToServer;
         public static SendClientDisconnectToServer sendClientDisconnectToServer;
         public static SendClientConnectToServer sendClientConnectToServer;
