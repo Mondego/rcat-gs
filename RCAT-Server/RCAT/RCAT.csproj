@@ -55,8 +55,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MySqlConnector.cs" />
+    <Compile Include="RCATContext.cs" />
     <Compile Include="User.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="RCAT.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

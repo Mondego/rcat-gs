@@ -131,6 +131,37 @@ namespace RCAT
             return user;
         }
 
+        public static string[] GetAllUsersNames()
+        {
+            MySqlConnection conn = new MySqlConnection(connStr);
+            string[] allUsers = null;
+            try
+            {
+                conn.Open();
+                int count = GetCount();
+                int i = 0;
+                allUsers = new string[count];
+
+                string sql = "SELECT `name` FROM users";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                MySqlDataReader rdr = cmd.ExecuteReader();
+
+                while (rdr.Read() && i <= count)
+                {
+                    ulong userName = rdr.GetUInt64(0);
+                    allUsers[i] = IPulongToString(userName);
+                    i++;
+                }
+                rdr.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            conn.Close();
+            return allUsers;
+        }
+        
         public static User[] GetAllUsers()
         {
             MySqlConnection conn = new MySqlConnection(connStr);

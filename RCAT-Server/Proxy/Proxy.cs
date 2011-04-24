@@ -47,7 +47,7 @@ namespace Proxy
         public static SendClientDisconnectToServer sendClientDisconnectToServer;
         public static SendClientConnectToServer sendClientConnectToServer;
 
-        protected static int serverPort = 82;
+        //protected static int serverPort = 82;
 
         /// <summary>
         /// Sets the name of the logger.

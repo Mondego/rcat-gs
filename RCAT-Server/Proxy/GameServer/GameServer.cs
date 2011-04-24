@@ -19,11 +19,13 @@ namespace Proxy
         protected List<ServerContext> onlineServers = new List<ServerContext>();
         protected Dictionary<string, ServerContext> clientPerServer = new Dictionary<string, ServerContext>();
 
+        protected TimeSpan TimeOut = new TimeSpan(0, 2, 0);
+
         protected int roundrobin = 0;
 
         public static ILog Log;
 
-        public int serverPort = 82;
+        public int serverPort = 882;
 
         protected void RegisterProxyMethods()
         {
@@ -88,7 +90,15 @@ namespace Proxy
                     {
                         while (SContext.serverConnection.Connected)
                         {
-                            SContext.serverConnection.Client.BeginReceive(SContext.Buffer, 0, SContext.Buffer.Length, SocketFlags.None, new AsyncCallback(DoReceive), SContext);
+                            if (SContext.ReceiveReady.Wait(TimeOut))
+                            {
+                                SContext.serverConnection.Client.BeginReceive(SContext.Buffer, 0, SContext.Buffer.Length, SocketFlags.None, new AsyncCallback(DoReceive), SContext);
+                            }
+                            else
+                            {
+                                Log.Warn("TIMED OUT");
+                                break;
+                            }
                         }
                     }
                     catch (Exception e) { Log.Error("Game Server Forcefully Disconnected", e); }
@@ -113,7 +123,8 @@ namespace Proxy
             {
                 SContext.sb.Append(UTF8Encoding.UTF8.GetString(SContext.Buffer, 0, received));
                 HandleRequest(SContext);
-                if (received == SContext.BufferSize)
+                SContext.ReceiveReady.Release();
+                if (received == ServerContext.BufferSize)
                 {
                     throw new Exception("[GAMESERVER]: HTTP Connect packet reached maximum size. FIXME!!");
                 }
@@ -125,21 +136,23 @@ namespace Proxy
             }
         }
 
-        // Handles the server request. Broadcast is the only server side functionality at this point. 
+        // Handles the server request. If position, message.data is a ClientBroadcast object. 
         protected void HandleRequest(ServerContext server)
         {
-            ClientBroadcast message = Newtonsoft.Json.JsonConvert.DeserializeObject<ClientBroadcast>(server.sb.ToString());
-            Proxy.broadcastToClients(message);
+            Message message = Newtonsoft.Json.JsonConvert.DeserializeObject<Message>(server.sb.ToString());
+            if (message.Type == ResponseType.Position)
+                Proxy.broadcastToClients(message.Data);
+            // TODO: Implement SendAllUsers
         }
 
         // Sends client data to the server
         public void SendPosition(User client)
         {
             ServerContext server = clientPerServer[client.Name];
-
+            
             Message resp = new Message();
             resp.Type = ResponseType.Position;
-            resp.Data = client.pos;
+            resp.Data = client;
 
             server.Send(UTF8Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(resp)));
         }

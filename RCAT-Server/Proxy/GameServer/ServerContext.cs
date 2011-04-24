@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
 using System.Net;
+using System.Threading;
 
 namespace Proxy
 {
@@ -17,11 +18,13 @@ namespace Proxy
 
         public bool Connected = true;
 
-        public byte[] Buffer = null;
-
         public StringBuilder sb = new StringBuilder();
 
-        public int BufferSize = 4096;
+        public static int BufferSize = 4096;
+
+        public byte[] Buffer = new byte[BufferSize];
+
+        public SemaphoreSlim ReceiveReady = new SemaphoreSlim(1);
 
         public GameServer gameServer = null;
 

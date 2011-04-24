@@ -51,7 +51,10 @@ namespace Proxy
             Console.WriteLine("Client data Received From : " + AContext.ClientAddress.ToString());
             User me = new User();
             me.Name = AContext.ClientAddress.ToString();
-            me.Context = AContext;
+            //me.Context = AContext;
+
+            // This object will be sent to server, useless to send UserContext, just need name and position
+            me.Context = null;
 
             string json = AContext.DataFrame.ToString();
             Position pos = JsonConvert.DeserializeObject<Position>(json);
