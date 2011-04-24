@@ -1,42 +1,38 @@
 <html>
 <head>
 <style>
-#textZone {
-	font-size: 40px;
-	background-color: lightblue;
-	position: absolute;
-	left: 50%;
-	top: 50%;
-	z-index: 1;
-}
 .player {
 	width: 50px;
 	height: 50px;
 	background-color: #aaf;
 	position: absolute;
 	z-index: 2;
+	font-size: 75%;
 }
 #avatar {
-	width: 30px;
-	height: 30px;
-	background-color: #909;
+	width: 15px;
+	height: 15px;
+	background-color: black;
 	position: absolute;
 	z-index: 3;
-	top: 0;
-	left: 0;
+	top: 500;
+	left: 300;
 }
 #chatLog {
 	top: 0px;
-	left: 200px;
+	left: 20%;
 	position: absolute;
 	background-color: #dfd;
 	z-index: 0;
 }
-#disconnect, #connect{
+#connectBox {
 	top: 10px;
 	right: 100px;
 	position: absolute;
 	z-index: 2;
+}
+#serverUrl {
+	width:300px;
 }
 </style>
 <script src="http://code.jquery.com/jquery-1.5.js"></script>
@@ -47,78 +43,150 @@
 
 <body>
 
-<p id="textZone"></p>
-
 <div id="avatar"></div>
 
 <div id="chatLog"></div>
 
-<button id="disconnect" style="display:none">Disconnect</button>
+
+<div id="connectBox">
+Server: <input id="serverUrl" value="ws://chateau.ics.uci.edu:81/websocket"/>
 <button id="connect">Connect</button>
+<button id="disconnect" style="display:none">Disconnect</button>
+<button id="cancelNPC">Take Control!</button>
+</div>
 
 <script type="text/javascript">
 // ====================== CLIENT GAME STATE ==============
 
 var usersTable = new Hashtable(); //will contain users' names and positions, indexed by name
-
+var npcTimer;
+var POS_SHIFT = 20; // the movement granularity
+var socket;
 
 // ============================ NETWORK =================
 
 
 // print feedback in log window
 function log(txt){
-	$('#chatLog').append(txt);
+	var now = new Date();
+	var mins = now.getMinutes();
+	var secs = now.getSeconds();
+	var msecs = now.getMilliseconds();
+	// add a zero in front of numbers <10
+	mins = mins < 10 ? ("0"+mins) : mins;
+	secs = secs < 10 ? ("0"+secs) : secs;
+	msecs = msecs > 99 ? msecs : (msecs > 9 ? "0"+msecs : "00"+msecs);
+	$('#chatLog').prepend("<br/>" + now.getHours() + ":" + mins + ":" + secs + ":" + msecs + " - " + txt + "<br/>");
 }
 
-var socket;
+
 
 if(!("WebSocket" in window)){
 	log("=== no web socket in this browser! ===");
 }
 
 function connect(){
-	//var host = "ws://opensim.ics.uci.edu:81/websocket";	
-	var host = "ws://128.195.4.46:81/websocket"; //opensim.ics.uci.edu
+	var host = $('#serverUrl').val();
+	//var host = "ws://128.195.4.46:81/websocket"; //opensim.ics.uci.edu
 	//var host = "ws://chateau.ics.uci.edu:81/websocket"; 
 	try {
 		socket = new WebSocket(host);
-		log('<dt>Socket Status:</dt><dd>'+socket.readyState+'</dd>');
+		log('Socket Status: '+socket.readyState +'(socket created)');
 		$('#connect').hide();
 		$('#disconnect').show();
-		socket.onopen = function(){
-			log('<dt>Socket Status</dt><dd>'+socket.readyState+' (onopen); Host: '+ host +'</dd>');
+		socket.onopen = function() {
+			log('Socket Status: '+socket.readyState+' (socket.onopen)');
+			runAsNpc();
+			sendPos();
 		}
-		socket.onmessage = function(msg){
-			log('<dt>Received</dt><dd>'+msg.data +' (onmsg)</dd>');	
-			var userPos = JSON.parse(msg.data);
-			switch(userPos.Type) {
-				case 2:
-					receivePos(userPos.Data.Name, userPos.Data.Position.top, userPos.Data.Position.left);
+		socket.onmessage = function(rawmsg){
+			log('Received: '+rawmsg.data +' (socket.onmsg)');	
+			var msg = JSON.parse(rawmsg.data);
+			switch(msg.Type) {
+				case 2: //received a pos
+					receivePos(msg.Data.Name, msg.Data.Position.top, msg.Data.Position.left);
+					break;
+				case 1: //someone logged off
+					deleteAvatar(msg.Data.Name);
+					usersTable.remove(msg.Data.Name);
 					break;
 				default:
-					log('<dt>Error</dt><dd>Unknown msg.Type ('+ userPos.Type +') in connect().</dd>');
+					//log('Error: Unknown msg.Type ('+ userPos.Type +').');
 					break;
 				}
 		}
 		socket.onclose = function(){
-			log('<dt>Socket Status</dt> <dd> (onclose) '+socket.readyState+' </dd>');
+			log('Socket Status: '+socket.readyState+' (socket.onclose)');
 		}
 	} catch(exception) {
-		log('<dt>Error:</dt> <dd>'+exception+'</dd>');
+		log('Exception in connect: '+exception);
 	}
+	
+
+	document.onkeypress = function (e) {
+		var keyCode = e.keyCode ? e.keyCode : e.charCode; //firefox (charcode) vs others (keycode)
+		//alert(keyCode);
+		switch(keyCode) {
+		case 37: //arrowleft
+		case 97: //a
+			iMoved(1);
+			break;
+		case 119: //w
+		case 38: //arrowup
+			iMoved(2);
+			break;
+		case 39: //arrowright
+		case 100: //d
+			iMoved(3);
+			break;
+		case 40: //arrowdown
+		case 115: //s
+			iMoved(4);
+			break;
+		default:
+			break;
+		}
+	};
+	
 }
 
+function iMoved(dir) {
+	var avatar = document.getElementById("avatar");
+	switch(dir) {
+	case 1: //left
+		avatar.style.left = avatar.offsetLeft - POS_SHIFT;
+		break;
+	case 3: //right
+		avatar.style.left = avatar.offsetLeft + POS_SHIFT;
+		break;
+	case 2: //up
+		avatar.style.top = avatar.offsetTop - POS_SHIFT;
+		break;
+	case 4: //down
+		avatar.style.top = avatar.offsetTop + POS_SHIFT;
+		break;
+	}
+	sendPos();
+}
+
+	
 function disconnect() {
+	clearTimeout(npcTimer);
 	socket.close();
-	log('<dt>Socket Status:</dt><dd>'+socket.readyState+'</dd>');
-	log("Connection closed.");
+	log('Connection closed. Socket Status: '+socket.readyState+'');
 	$('#disconnect').hide();
 	$('#connect').show();
+	document.onkeypress = null;
+	// destroy all avatars
+	var names = usersTable.keys();
+	for (i = 0 ; i <names.length ; i++ ) {
+		deleteAvatar(names[i]);
+	}
+	usersTable.clear();
 }
 
 // when I receive a position from the server
 function receivePos(name, top, left){
-	
 	if(usersTable.containsKey(name)) { //user was already displayed
 		usersTable.get(name).top = top;
 		usersTable.get(name).left = left;
@@ -130,6 +198,27 @@ function receivePos(name, top, left){
 		createAvatar(name, top, left);
 	}
 }
+
+
+// send my position to the server
+function sendPos(){
+	var avatar = document.getElementById("avatar");
+	var pos = {
+		"top": avatar.offsetTop,
+		"left": avatar.offsetLeft 
+		}; 
+	var txt = JSON.stringify(pos);
+	try{
+		socket.send(txt);
+		log('Sent: '+txt)
+	} catch(exception){
+		log('Exception in sendPos: '+exception);
+	}
+}
+
+
+// ==================== GRAPHICS ========================
+
 
 // graphically move an avatar
 function moveAvatar(name,top,left) { //el being the div to move
@@ -149,65 +238,30 @@ function createAvatar(name, top, left) {
 	el.innerHTML = name;
 	el.style.top = top;
 	el.style.left = left;
+	el.style.backgroundColor = getRgbFromName(name);
 	document.body.appendChild(el);
+	//log(name+ "created");
+}
+
+// graphically create an avatar
+function deleteAvatar(name) {
+	el = document.getElementById(name);
+	document.body.removeChild(el);
 }
 
 
-// send my position to the server
-function sendPos(){
-	var avatar = document.getElementById("avatar");
-	var pos = {
-		"top": avatar.offsetTop,
-		"left": avatar.offsetLeft 
-		}; 
-	var txt = JSON.stringify(pos);
-	try{
-		socket.send(txt);
-		//log('Sent: '+txt)
-	} catch(exception){
-		log('Error: '+exception);
-	}
+function getRgbFromName(name) {
+	var port = name.split(":")[1];
+	var ip = name.split(":")[0];
+	var ipNums = ip.split(".");
+	log(port + "--" + ipNums);
+	var r = (port*32)%256;
+	var g = ipNums[3];
+	var b = ipNums[2];
+	return("rgb("+r+","+g+","+b+")");
 }
 
 
-// ==================== GRAPHICS ========================
-var POS_SHIFT = 20; // the movement granularity
-
-
-function doKeyPress(e) {
-	var keyCode = e.keyCode ? e.keyCode : e.charCode; //firefox (charcode) vs others (keycode)
-	var avatar = document.getElementById("avatar");
-	//alert(keyCode);
-	switch(keyCode) {
-	case 37: //arrowleft
-	case 97: //a
-		text = "left";
-		avatar.style.left = avatar.offsetLeft - POS_SHIFT;
-		break;
-	case 119: //w
-	case 38: //arrowup
-		text = "up";
-		avatar.style.top = avatar.offsetTop - POS_SHIFT;
-		break;
-	case 39: //arrowright
-	case 100: //d
-		text = "right";
-		avatar.style.left = avatar.offsetLeft + POS_SHIFT;
-		break;
-	case 40: //arrowdown
-	case 115: //s
-		avatar.style.top = avatar.offsetTop + POS_SHIFT;
-		text = "down";
-		break;
-	default:
-		text = String.fromCharCode(keyCode);
-	}
-	sendPos();
-	$('#textZone').text(text);
-};
-
-
-document.onkeypress = doKeyPress;
 
 $('#disconnect').bind('click', function(e) {
 	//e.preventDefault();
@@ -220,6 +274,17 @@ $('#connect').bind('click', function(e) {
 });
 
 
+$('#cancelNPC').bind('click', function(e) {
+	clearTimeout(npcTimer);
+	$('#cancelNPC').hide();
+});
+
+function runAsNpc() {
+	iMoved(Math.floor(Math.random()*4+1))
+	npcTimer = setTimeout(runAsNpc, 1000);
+}
+
+connect();
 </script>
 </body>
 </html>
