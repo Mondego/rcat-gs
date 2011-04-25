@@ -5,13 +5,16 @@ using Alchemy.Server.Classes;
 using log4net;
 using RCAT;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Proxy
 {
     public class ClientServer
     {
-
         WSServer clientListener = null;
+        JsonSerializer serializer = new JsonSerializer();
+
+        protected static ILog Log = null;
 
         protected void RegisterProxyMethods()
         {
@@ -20,6 +23,7 @@ namespace Proxy
 
         public ClientServer(ILog log)
         {
+            Log = log;
             RegisterProxyMethods();
             // Client server uses Alchemy Websockets
             clientListener = new WSServer(81, IPAddress.Any);
@@ -55,13 +59,20 @@ namespace Proxy
 
             // This object will be sent to server, useless to send UserContext, just need name and position
             me.Context = null;
+            try
+            {
 
-            string json = AContext.DataFrame.ToString();
-            Position pos = JsonConvert.DeserializeObject<Position>(json);
+                string json = AContext.DataFrame.ToString();
+                Position pos = JsonConvert.DeserializeObject<Position>(json);
 
-            me.pos = pos;
+                me.pos = pos;
 
-            Proxy.sendSetPositionToServer(me);
+                Proxy.sendSetPositionToServer(me);
+            }
+            catch (Exception e)
+            {
+                Log.Error("[CLIENTSERVER]: Error parsing Json on OnReceive: ", e);
+            }
 
         }
 
@@ -88,7 +99,17 @@ namespace Proxy
             foreach (string client in broadcast.clients)
             {
                 UserContext cl = Proxy.onlineUsers[client];
-                cl.Send(broadcast.data);
+
+                Message m = new Message();
+
+                //User usr = (User)serializer.Deserialize(new JTokenReader(broadcast.data), typeof(User));
+                //m.Data = JsonConvert.SerializeObject(usr);
+
+                m.Data = new { Name = (string)broadcast.data["Name"], Position = new Position((int)broadcast.data["pos"]["top"], (int)broadcast.data["pos"]["left"]) };
+                m.Type = broadcast.type; 
+                string json = JsonConvert.SerializeObject(m);
+
+                cl.Send(json);
             }
         }
     }

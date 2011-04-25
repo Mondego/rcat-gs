@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Web;
-using Alchemy.Server;
 using Alchemy.Server.Classes;
 using Newtonsoft.Json;
-using System.Net;
-using System.Collections;
-using System.Data;
-using MySql.Data;
-using MySql.Data.MySqlClient;
+
 using System.Threading;
 using System.Net.Sockets;
 using System.Text;
+using Newtonsoft.Json.Linq;
+using log4net;
+using System.IO;
 
 namespace RCAT
 {
@@ -44,6 +40,7 @@ namespace RCAT
     {
         public dynamic data;
         public string[] clients;
+        public ResponseType type;
     }
 
     class RCAT
@@ -66,9 +63,44 @@ namespace RCAT
 
         public static TcpClient proxy = null;
 
+        public static JsonSerializer serializer = new JsonSerializer();
+
         public static int Port = 82;
 
-        public static TimeSpan TimeOut = new TimeSpan(0, 2, 0);
+        public static TimeSpan TimeOut = new TimeSpan(0, 30, 0);
+
+        /// <summary>
+        /// Sets the name of the logger.
+        /// </summary>
+        /// <value>
+        /// The name of the logger.
+        /// </value>
+        public static string LoggerName
+        {
+            set
+            {
+                Log = LogManager.GetLogger(value);
+            }
+        }
+
+        /// <summary>
+        /// Sets the log config file name.
+        /// </summary>
+        /// <value>
+        /// The log config file name.
+        /// </value>
+        public static string LogConfigFile
+        {
+            set
+            {
+                log4net.Config.XmlConfigurator.Configure(new FileInfo(value));
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static ILog Log = LogManager.GetLogger("RCAT.Log");
 
         /// <summary>
         /// Initialize the application and start the Alchemy Websockets server
@@ -91,15 +123,18 @@ namespace RCAT
             // Servers register their existence and communicate with proxy through TCP
             try
             {
+                LogConfigFile = "RCAT.config";
+                LoggerName = "RCAT.Log";
                 //"128.195.4.46", 882
                 Thread.Sleep(2000);
                 proxy = new TcpClient();
                 proxy.BeginConnect("opensim.ics.uci.edu", 882, RunServer, null);
+                Log.Info("RCAT Server started!");
 
                 //Listener = new TcpListener(IPAddress.Any, Port);
                 //ThreadPool.QueueUserWorkItem(serverListen, null);
             }
-            catch { Console.WriteLine("Game Server failed to start"); }
+            catch { Log.Error("Game Server failed to start"); }
 
             // Accept commands on the console and keep it alive
 
@@ -119,7 +154,7 @@ namespace RCAT
             {
                 proxy.EndConnect(AResult);
             }
-            catch (Exception e) { Console.WriteLine("Connect Failed", e); }
+            catch (Exception e) { Log.Error("Connect Failed", e); }
 
             if (proxy != null)
             {
@@ -127,6 +162,7 @@ namespace RCAT
                 {
                     try
                     {
+                        RContext.proxyConnection = proxy;
                         while (proxy.Connected)
                         {
                             if (RContext.ReceiveReady.Wait(TimeOut))
@@ -135,12 +171,12 @@ namespace RCAT
                             }
                             else
                             {
-                                Console.WriteLine("TIMED OUT - RCAT");
+                                Log.Warn("TIMED OUT - RCAT");
                                 break;
                             }
                         }
                     }
-                    catch (Exception e) { Console.WriteLine("Server Forcefully Disconnected", e); }
+                    catch (Exception e) { Log.Warn("Server Forcefully Disconnected", e); }
                 }
             }
         }
@@ -155,18 +191,20 @@ namespace RCAT
             {
                 received = RContext.proxyConnection.Client.EndReceive(AResult);
             }
-            catch (Exception e) { Console.WriteLine("[RCATSERVER]: RCAT Server Forcefully Disconnected. Exception: {0}", e.StackTrace); }
+            catch (Exception e) { Log.Error("[RCATSERVER]: RCAT Server Forcefully Disconnected. Exception: {0}", e); }
 
             // TODO: No packets bigger then BufferSize are allowed at this time
             if (received > 0)
             {
-                RContext.sb.Append(UTF8Encoding.UTF8.GetString(RContext.buffer, 0, received));
-                HandleRequest(RContext);
-
+                //RContext.sb.Append(UTF8Encoding.UTF8.GetString(RContext.buffer, 0, received));
+                RContext.sb = UTF8Encoding.UTF8.GetString(RContext.buffer, 0, received);
+                Log.Info("Received from client user info: " + RContext.sb);
                 if (received == RCATContext.DefaultBufferSize)
-                {
                     throw new Exception("[RCATSERVER]: HTTP Connect packet reached maximum size. FIXME!!");
-                }
+                HandleRequest(RContext);
+                //RContext.sb.Clear();
+                RContext.ReceiveReady.Release();
+              
             }
             else
             {
@@ -178,14 +216,23 @@ namespace RCAT
         // Handles the server request. Broadcast is the only server side functionality at this point. 
         protected static void HandleRequest(RCATContext server)
         {
-            Message message = Newtonsoft.Json.JsonConvert.DeserializeObject<Message>(server.sb.ToString());
-            server.message = message;
-            if (message.Type == ResponseType.Connection)
-                OnConnect(server);
-            else if (message.Type == ResponseType.Disconnect)
-                OnDisconnect(server);
-            else if (message.Type == ResponseType.Position)
-                SetPosition(server);
+            try
+            {
+                Message message = Newtonsoft.Json.JsonConvert.DeserializeObject<Message>(server.sb.ToString());
+                server.message = message;
+
+                if (message.Type == ResponseType.Connection)
+                    OnConnect(server);
+                else if (message.Type == ResponseType.Disconnect)
+                    OnDisconnect(server);
+                else if (message.Type == ResponseType.Position)
+                    SetPosition(server);
+            }
+            catch (Exception e)
+            {
+                Log.Warn("JSON message was: " + server.sb.ToString());
+                Log.Error(e);
+            }
         }
 
         /// <summary>
@@ -195,49 +242,19 @@ namespace RCAT
         /// <param name="AContext">The user's connection context</param>
         public static void OnConnect(RCATContext RContext)
         {
-            Console.WriteLine("Client Connection From : " + (string)RContext.message.Data);
-
-            onlineUsers.Add(RContext.message.Data);
-
-            SendAllUsers(RContext);
-        }
-
-        /// <summary>
-        /// Event fired when a data is received from the Alchemy Websockets server instance.
-        /// Parses data as JSON and calls the appropriate message or sends an error message.
-        /// </summary>
-        /// <param name="AContext">The user's connection context</param>
-        public static void OnReceive(RCATContext RContext)
-        {
-            Console.WriteLine("Received Data:");
-
             try
             {
-                if (RContext.message.Type == ResponseType.Position)
-                    SetPosition(RContext);
+                Log.Info("Client Connection From : " + (string)RContext.message.Data);
+
+                onlineUsers.Add(RContext.message.Data);
+                SendAllUsers(RContext);
             }
-            catch (Exception e) // Bad JSON! For shame.
+            catch (Exception e)
             {
-                Console.WriteLine(e.StackTrace);
-                /*
-                Console.WriteLine("Failed to parse JSON");
-                Message r = new Message();
-                r.Type = ResponseType.Error;
-                r.Data = new { Message = e.Message };
-
-                AContext.Send(JsonConvert.SerializeObject(r));
-                 * */
+                Log.Error("Exception in OnConnect", e);
             }
-        }
 
-        /// <summary>
-        /// Event fired when the Alchemy Websockets server instance sends data to a client.
-        /// Logs the data to the console and performs no further action.
-        /// </summary>
-        /// <param name="AContext">The user's connection context</param>
-        public static void OnSend(UserContext AContext)
-        {
-            Console.WriteLine("Data Send To : " + AContext.ClientAddress.ToString() + " | " + AContext.DataFrame.ToString());
+            
         }
 
         // NOTE: This is not safe code. You may end up broadcasting to people who
@@ -253,7 +270,7 @@ namespace RCAT
         {
             try
             {
-                Console.WriteLine("Client Disconnected : " + RContext.message.Data);
+                Log.Info("Client Disconnected : " + RContext.message.Data);
 
                 User user = MySqlConnector.GetUser(RContext.message.Data);
 
@@ -261,22 +278,19 @@ namespace RCAT
 
                 if (!String.IsNullOrEmpty(user.Name))
                 {
-                    r = new Message();
-                    r.Type = ResponseType.Disconnect;
-                    r.Data = new { Name = user.Name };
-
                     string[] clients = MySqlConnector.GetAllUsersNames();
-                    RContext.Broadcast(r,clients);
+                    RContext.Broadcast(user.Name,clients,ResponseType.Disconnect);
                     MySqlConnector.RemoveUser(user.Name);
                 }
                 else
-                    Console.WriteLine("ERROR: User not found!");
+                    Log.Warn("ERROR: User not found!");
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine(ex.StackTrace);
+                Log.Error(ex);
             }
         }
+
         /// <summary>
         /// Broadcasts a position message to all online users
         /// </summary>
@@ -284,16 +298,18 @@ namespace RCAT
         /// <param name="AContext">The user's connection context</param>
         private static void SetPosition(RCATContext RContext)
         {
-            User user = Newtonsoft.Json.JsonConvert.DeserializeObject<User>(RContext.message.Data);
-
-            Message r = new Message();
-            r.Type = ResponseType.Position;
-            r.Data = new { Name = user.Name, Position = user.pos };
-
-            MySqlConnector.SetPosition(user.Name, user.pos);
-
-            string[] clients = MySqlConnector.GetAllUsersNames();
-            RContext.Broadcast(r, clients);
+            try
+            {
+                User user = new User();
+                user = (User)serializer.Deserialize(new JTokenReader(RContext.message.Data), typeof(User));
+                MySqlConnector.SetPosition(user.Name, user.pos);
+                string[] clients = MySqlConnector.GetAllUsersNames();
+                RContext.Broadcast(user, clients, ResponseType.Position);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e);
+            }
         }
         /// <summary>
         /// Sends an error message to the client who caused the error
@@ -302,7 +318,7 @@ namespace RCAT
         /// <param name="AContext">The user's connection context</param>
         private static void SendError(string ErrorMessage, UserContext AContext)
         {
-            Console.WriteLine("Error Message: " + ErrorMessage);
+            Log.Warn("Error Message: " + ErrorMessage);
             Message r = new Message();
 
             r = new Message();
@@ -317,14 +333,21 @@ namespace RCAT
         /// </summary>
         private static void SendAllUsers(RCATContext RContext)
         {
-            Message r = new Message();
-            r = new Message();
-            r.Type = ResponseType.AllUsers;
+            try
+            {
+                Message r = new Message();
+                r = new Message();
+                r.Type = ResponseType.AllUsers;
 
-            // Using database
-            User[] arr = MySqlConnector.GetAllUsers();
-            r.Data = new { Users = arr };
-            RContext.Send(JsonConvert.SerializeObject(r));
+                // Using database
+                User[] arr = MySqlConnector.GetAllUsers();
+                r.Data = new { Users = arr };
+                //RContext.Send(JsonConvert.SerializeObject(r));
+            }
+            catch (Exception e)
+            {
+                Log.Error("Exception in SendAllUsers:",e);
+            }
         }
     }
 }

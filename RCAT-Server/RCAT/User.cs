@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Alchemy.Server.Classes;
+using Newtonsoft.Json;
 
 
 namespace RCAT
@@ -29,13 +30,16 @@ namespace RCAT
         }
     }
 
+    [JsonObject(MemberSerialization.OptIn)]
     public class User
     {
+        [JsonProperty]
         public string Name = String.Empty;
-        public UserContext Context { get; set; }
-        public Position pos;
+
+        public UserContext Context = null;
+
+        [JsonProperty]
+        public Position pos = new Position(0,0);
 
     }
-
-
 }

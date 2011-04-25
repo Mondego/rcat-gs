@@ -11,7 +11,8 @@ namespace RCAT
     {
         // TODO: Default buffer size. Should set this somewhere global?
         public static int DefaultBufferSize = 4096;
-        public StringBuilder sb = new StringBuilder();
+        //public StringBuilder sb = new StringBuilder();
+        public string sb = null;
         public byte[] buffer = new byte[DefaultBufferSize];
         public TcpClient proxyConnection;
         public Message message;
@@ -22,12 +23,19 @@ namespace RCAT
             Send(UTF8Encoding.UTF8.GetBytes(Data));
         }
 
-        public void Broadcast(dynamic data, string[] clients)
+        public void Broadcast(dynamic data, string[] clients, ResponseType type)
         {
+
             ClientBroadcast cb = new ClientBroadcast();
-            cb.data = message.Data;
             cb.clients = clients;
-            Send(Newtonsoft.Json.JsonConvert.SerializeObject(cb));
+            cb.data = data;
+            cb.type = type;
+
+            Message r = new Message();
+            r.Type = type;
+            r.Data = cb;
+
+            Send(Newtonsoft.Json.JsonConvert.SerializeObject(r));
         }
 
         /// <summary>
