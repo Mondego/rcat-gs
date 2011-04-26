@@ -125,10 +125,10 @@ namespace Proxy
             // TODO: No packets bigger then BufferSize are allowed at this time
             if (received > 0)
             {
-                SContext.sb.Append(UTF8Encoding.UTF8.GetString(SContext.Buffer, 0, received));
+                string result = UTF8Encoding.UTF8.GetString(SContext.Buffer, 0, received);
+                SContext.sb = result.Split('\0');
                 HandleRequest(SContext);
                 SContext.ReceiveReady.Release();
-                SContext.sb.Clear();
                 if (received == ServerContext.BufferSize)
                 {
                     throw new Exception("[GAMESERVER]: HTTP Connect packet reached maximum size. FIXME!!");
@@ -149,12 +149,18 @@ namespace Proxy
              //   User Value<User>(message.Data)
             try
             {
-                Message message = Newtonsoft.Json.JsonConvert.DeserializeObject<Message>(server.sb.ToString());
-                if (message.Type == ResponseType.Position)
+                foreach (string s in server.sb)
                 {
-                    ClientBroadcast cb = (ClientBroadcast)serializer.Deserialize(new JTokenReader(message.Data), typeof(ClientBroadcast));
-                    Proxy.broadcastToClients(cb);
-                    // TODO: Implement SendAllUsers
+                    if (s != "")
+                    {
+                        Message message = Newtonsoft.Json.JsonConvert.DeserializeObject<Message>(s);
+                        if (message.Type == ResponseType.Position)
+                        {
+                            ClientBroadcast cb = (ClientBroadcast)serializer.Deserialize(new JTokenReader(message.Data), typeof(ClientBroadcast));
+                            Proxy.broadcastToClients(cb);
+                            // TODO: Implement SendAllUsers
+                        }
+                    }
                 }
             }
             catch (Exception e)
@@ -173,8 +179,8 @@ namespace Proxy
             resp.Data = client;
 
             Log.Info("Sending Client info: " + resp.Data.ToString());
-
-            server.Send(UTF8Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(resp)));
+            
+            server.Send(Newtonsoft.Json.JsonConvert.SerializeObject(resp) + '\0');
         }
 
         public void SendClientConnect(UserContext client)
@@ -186,7 +192,7 @@ namespace Proxy
             resp.Type = ResponseType.Connection;
             resp.Data = client.ClientAddress.ToString();
 
-            server.Send(UTF8Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(resp)));
+            server.Send(Newtonsoft.Json.JsonConvert.SerializeObject(resp));
         }
 
         protected ServerContext PickServer()
@@ -207,7 +213,7 @@ namespace Proxy
             resp.Type = ResponseType.Disconnect;
             resp.Data = client.ClientAddress.ToString();
 
-            server.Send(UTF8Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(resp)));
+            server.Send(Newtonsoft.Json.JsonConvert.SerializeObject(resp));
         }
 
         public void Stop()

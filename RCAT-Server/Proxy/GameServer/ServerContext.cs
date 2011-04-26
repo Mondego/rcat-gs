@@ -18,15 +18,25 @@ namespace Proxy
 
         public bool Connected = true;
 
-        public StringBuilder sb = new StringBuilder();
+        //public StringBuilder sb = new StringBuilder();
+        public string[] sb = null;
 
         public static int BufferSize = 4096;
 
+        //Receive buffer
         public byte[] Buffer = new byte[BufferSize];
+
+        //Send buffer
+        public byte[] SendBuffer = new byte[BufferSize];
 
         public SemaphoreSlim ReceiveReady = new SemaphoreSlim(1);
 
         public GameServer gameServer = null;
+
+        public void Send(string Data)
+        {
+            Send(UTF8Encoding.UTF8.GetBytes(Data + '\0'));
+        }
 
         /// <summary>
         /// Sends the specified data.
@@ -34,12 +44,13 @@ namespace Proxy
         /// <param name="Data">The data.</param>
         /// <param name="AContext">The user context.</param>
         /// <param name="Close">if set to <c>true</c> [close].</param>
-        public void Send(byte[] Data)
+        private void Send(byte[] Data)
         {
             AsyncCallback ACallback = EndSend;
             try
             {
-                serverConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.None, ACallback, this);
+                Data.CopyTo(SendBuffer,0);
+                serverConnection.Client.BeginSend(SendBuffer, 0, Data.Length, SocketFlags.None, ACallback, this);
             }
             catch
             {
@@ -58,6 +69,7 @@ namespace Proxy
             try
             {
                 SContext.serverConnection.Client.EndSend(AResult);
+                Console.WriteLine("[PROXY->SERVER]: " + UTF8Encoding.UTF8.GetString(SContext.SendBuffer,0,1024));
                 //AContext.SendReady.Release();
             }
             catch

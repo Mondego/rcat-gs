@@ -167,7 +167,7 @@ namespace RCAT
                         {
                             if (RContext.ReceiveReady.Wait(TimeOut))
                             {
-                                proxy.Client.BeginReceive(RContext.buffer, 0, RCATContext.DefaultBufferSize, SocketFlags.None, new AsyncCallback(DoReceive), RContext);
+                                proxy.Client.BeginReceive(RContext.buffer, 0, RCATContext.DefaultBufferSize, RContext.flags, new AsyncCallback(DoReceive), RContext);
                             }
                             else
                             {
@@ -189,6 +189,7 @@ namespace RCAT
 
             try
             {
+                
                 received = RContext.proxyConnection.Client.EndReceive(AResult);
             }
             catch (Exception e) { Log.Error("[RCATSERVER]: RCAT Server Forcefully Disconnected. Exception: {0}", e); }
@@ -197,8 +198,10 @@ namespace RCAT
             if (received > 0)
             {
                 //RContext.sb.Append(UTF8Encoding.UTF8.GetString(RContext.buffer, 0, received));
-                RContext.sb = UTF8Encoding.UTF8.GetString(RContext.buffer, 0, received);
-                Log.Info("Received from client user info: " + RContext.sb);
+                string values = UTF8Encoding.UTF8.GetString(RContext.buffer, 0, received);
+                RContext.sb = values.Split('\0');
+                Log.Info("[FROM PROXY]: " + RContext.sb);
+                Log.Info("[FROM PROXY] Flags: " + RContext.flags);
                 if (received == RCATContext.DefaultBufferSize)
                     throw new Exception("[RCATSERVER]: HTTP Connect packet reached maximum size. FIXME!!");
                 HandleRequest(RContext);
@@ -218,15 +221,22 @@ namespace RCAT
         {
             try
             {
-                Message message = Newtonsoft.Json.JsonConvert.DeserializeObject<Message>(server.sb.ToString());
-                server.message = message;
+                foreach (string s in server.sb)
+                {
+                    if (s != "")
+                    {
+                        Log.Info("[FROM PROXY]: Strings in SB" + s);
+                        Message message = Newtonsoft.Json.JsonConvert.DeserializeObject<Message>(s);
+                        server.message = message;
 
-                if (message.Type == ResponseType.Connection)
-                    OnConnect(server);
-                else if (message.Type == ResponseType.Disconnect)
-                    OnDisconnect(server);
-                else if (message.Type == ResponseType.Position)
-                    SetPosition(server);
+                        if (message.Type == ResponseType.Connection)
+                            OnConnect(server);
+                        else if (message.Type == ResponseType.Disconnect)
+                            OnDisconnect(server);
+                        else if (message.Type == ResponseType.Position)
+                            SetPosition(server);
+                    }
+                }
             }
             catch (Exception e)
             {

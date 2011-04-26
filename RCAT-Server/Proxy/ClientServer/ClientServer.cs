@@ -66,6 +66,7 @@ namespace Proxy
                 Position pos = JsonConvert.DeserializeObject<Position>(json);
 
                 me.pos = pos;
+                Console.WriteLine("Position received from Client: " + pos.top.ToString() + ":" + pos.left.ToString());
 
                 Proxy.sendSetPositionToServer(me);
             }
@@ -78,7 +79,7 @@ namespace Proxy
 
         public static void OnSend(UserContext AContext)
         {
-            Console.WriteLine("Data Send To : " + AContext.ClientAddress.ToString() + " | " + AContext.DataFrame.ToString());
+            Console.WriteLine("[PROXY->CLIENT]: " + AContext.ClientAddress.ToString() + " | " + AContext.DataFrame.ToString());
         }
 
         public static void OnDisconnect(UserContext AContext)
