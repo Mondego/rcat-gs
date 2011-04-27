@@ -167,11 +167,11 @@ namespace RCAT
                         {
                             if (RContext.ReceiveReady.Wait(TimeOut))
                             {
-                                proxy.Client.BeginReceive(RContext.buffer, 0, RCATContext.DefaultBufferSize, RContext.flags, new AsyncCallback(DoReceive), RContext);
+                                proxy.Client.BeginReceive(RContext.buffer, 0, RCATContext.DefaultBufferSize, SocketFlags.None, new AsyncCallback(DoReceive), RContext);
                             }
                             else
                             {
-                                Log.Warn("TIMED OUT - RCAT");
+                                Log.Warn("[RCAT]: Server timed out connection with proxy.");
                                 break;
                             }
                         }
@@ -194,31 +194,72 @@ namespace RCAT
             }
             catch (Exception e) { Log.Error("[RCATSERVER]: RCAT Server Forcefully Disconnected. Exception: {0}", e); }
 
-            // TODO: No packets bigger then BufferSize are allowed at this time
-            if (received > 0)
+            try
             {
-                //RContext.sb.Append(UTF8Encoding.UTF8.GetString(RContext.buffer, 0, received));
-                string values = UTF8Encoding.UTF8.GetString(RContext.buffer, 0, received);
-                RContext.sb = values.Split('\0');
-                Log.Info("[FROM PROXY]: " + RContext.sb);
-                Log.Info("[FROM PROXY] Flags: " + RContext.flags);
-                if (received == RCATContext.DefaultBufferSize)
-                    throw new Exception("[RCATSERVER]: HTTP Connect packet reached maximum size. FIXME!!");
-                HandleRequest(RContext);
-                //RContext.sb.Clear();
-                RContext.ReceiveReady.Release();
-              
+                if (received > 0)
+                {
+                    string values = UTF8Encoding.UTF8.GetString(RContext.buffer, 0, received);
+                    if ((received == RCATContext.DefaultBufferSize && !values.EndsWith("\0")) || RContext.IsTruncated)
+                    {
+                        // There is more data to retrieve. Save current message and prepare for more
+                        if (RContext.IsTruncated == false)
+                        {
+                            // Last message was not truncated
+                            RContext.sb = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+                            RContext.IsTruncated = true;
+                            RContext.proxyConnection.Client.BeginReceive(RContext.buffer, 0, RCATContext.DefaultBufferSize, SocketFlags.None, new AsyncCallback(DoReceive), RContext);
+                        }
+                        else
+                        {
+                            string[] tmp = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+                            
+
+                            var list = new List<string>();
+                            list.AddRange(RContext.sb);
+                            // Append last element in RContext.sb to first element of tmp array
+                            list[RContext.sb.Length - 1] = list[RContext.sb.Length - 1] + tmp[0];
+                            // Exclude the first element of tmp, and add it to the list
+                            var segment = new ArraySegment<string>(tmp,1,tmp.Length -1);
+                            list.AddRange(segment.Array);
+                            
+                            RContext.sb = list.ToArray();
+                            Log.Info("[RCAT]: Appended truncated message.");
+
+                            if (values.EndsWith("\0"))
+                            {
+                                RContext.IsTruncated = false;
+                                HandleRequest(RContext);
+                                RContext.ReceiveReady.Release();
+                            }
+                            else
+                            {
+                                RContext.proxyConnection.Client.BeginReceive(RContext.buffer, 0, RCATContext.DefaultBufferSize, SocketFlags.None, new AsyncCallback(DoReceive), RContext);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        RContext.sb = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+                        HandleRequest(RContext);
+                        RContext.ReceiveReady.Release();
+                    }
+                }
+                else
+                {
+                    // What do we do if lose connection to Proxy?
+                    //RContext.Dispose();
+                }
             }
-            else
+            catch (Exception e)
             {
-                // What do we do if lose connection to Proxy?
-                //RContext.Dispose();
+                Log.Error("Error in DoReceive: ", e);
             }
         }
 
         // Handles the server request. Broadcast is the only server side functionality at this point. 
         protected static void HandleRequest(RCATContext server)
         {
+            int i = 0;
             try
             {
                 foreach (string s in server.sb)
@@ -235,12 +276,13 @@ namespace RCAT
                             OnDisconnect(server);
                         else if (message.Type == ResponseType.Position)
                             SetPosition(server);
+                        i++;
                     }
                 }
             }
             catch (Exception e)
             {
-                Log.Warn("JSON message was: " + server.sb.ToString());
+                Log.Warn("JSON message was: " + server.sb[i]);
                 Log.Error(e);
             }
         }

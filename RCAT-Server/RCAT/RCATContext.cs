@@ -13,11 +13,11 @@ namespace RCAT
         public static int DefaultBufferSize = 4096;
         //public StringBuilder sb = new StringBuilder();
         public string[] sb = null;
-        public SocketFlags flags = SocketFlags.None;
         public byte[] buffer = new byte[DefaultBufferSize];
         public TcpClient proxyConnection;
         public Message message;
         public SemaphoreSlim ReceiveReady = new SemaphoreSlim(1);
+        public bool IsTruncated = false;
 
         public void Send(string Data)
         {
@@ -50,11 +50,14 @@ namespace RCAT
             AsyncCallback ACallback = EndSend;
             try
             {
-                proxyConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.None, ACallback, this);
+                if (Data.Length > RCATContext.DefaultBufferSize)
+                    proxyConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.Truncated, ACallback, this);
+                else
+                    proxyConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.None, ACallback, this);
             }
             catch
             {
-                Console.WriteLine("[ServerContext]: Exception sending");
+                RCAT.Log.Warn("[ServerContext]: Exception sending");
                 //AContext.SendReady.Release();
             }
         }
@@ -73,7 +76,7 @@ namespace RCAT
             }
             catch
             {
-                Console.WriteLine("[ServerContext]: Exception end send");
+                RCAT.Log.Warn("[ServerContext]: Exception end send");
                 //AContext.SendReady.Release(); 
             }
         }

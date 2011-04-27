@@ -219,10 +219,6 @@ namespace Alchemy.Server.Classes
         /// </summary>
         public byte[] Buffer = null;
         /// <summary>
-        /// Holds appended message from buffer, encoded to string
-        /// </summary>
-        public StringBuilder sb = new StringBuilder();
-        /// <summary>
         /// How many pings in a row we've had from this client, indicates inactivity.
         /// </summary>
         public int Pings = 0;

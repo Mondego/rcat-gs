@@ -14,12 +14,16 @@ namespace Proxy
         /// </summary>
         public EndPoint ClientAddress = null;
 
+        public SocketFlags sflag = SocketFlags.None;
+
         public TcpClient serverConnection = null;
 
         public bool Connected = true;
 
         //public StringBuilder sb = new StringBuilder();
         public string[] sb = null;
+
+        public bool IsTruncated = false;
 
         public static int BufferSize = 4096;
 
@@ -54,7 +58,7 @@ namespace Proxy
             }
             catch
             {
-                Console.WriteLine("[ServerContext]: Exception sending");
+                GameServer.Log.Info("[ServerContext]: Exception sending");
                 //AContext.SendReady.Release();
             }
         }
@@ -69,12 +73,12 @@ namespace Proxy
             try
             {
                 SContext.serverConnection.Client.EndSend(AResult);
-                Console.WriteLine("[PROXY->SERVER]: " + UTF8Encoding.UTF8.GetString(SContext.SendBuffer,0,1024));
+                GameServer.Log.Info("[PROXY->SERVER]: " + UTF8Encoding.UTF8.GetString(SContext.SendBuffer,0,1024));
                 //AContext.SendReady.Release();
             }
             catch
             {
-                Console.WriteLine("[ServerContext]: Exception end send");
+                GameServer.Log.Info("[ServerContext]: Exception end send");
                 //AContext.SendReady.Release(); 
             }
         }
@@ -89,7 +93,7 @@ namespace Proxy
                 serverConnection.Client.Close();
                 serverConnection = null;
             }
-            catch (Exception e) { Console.WriteLine("Client Already Disconnected", e); }
+            catch (Exception e) { GameServer.Log.Info("Client Already Disconnected", e); }
             finally
             {
                 if (Connected)

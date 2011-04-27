@@ -363,14 +363,13 @@ namespace Alchemy.Server
             // The HTTP Upgrade packet must not be bigger then BufferSize (4096)
             if (received > 0)
             {
-                AContext.sb.Append(UTF8Encoding.UTF8.GetString(AContext.Buffer, 0, received));
-                //AContext.Connection.Client.BeginReceive(AContext.Buffer, 0, AContext.Buffer.Length, SocketFlags.None, new AsyncCallback(DoReceive), AContext);
-                AContext.Handler.HandleRequest(AContext);
-                AContext.ReceiveReady.Release();
-                if (received == DefaultBufferSize)
+                if (received == DefaultBufferSize && !AContext.IsSetup)
                 {
                     throw new Exception("[WS_SERVER]: HTTP Connect packet reached maximum size. Are we missing data?");
                 }
+                AContext.Handler.HandleRequest(AContext);
+                AContext.ReceiveReady.Release();
+                
             }
             else
             {

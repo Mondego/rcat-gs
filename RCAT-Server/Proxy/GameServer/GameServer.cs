@@ -96,7 +96,7 @@ namespace Proxy
                         {
                             if (SContext.ReceiveReady.Wait(TimeOut))
                             {
-                                SContext.serverConnection.Client.BeginReceive(SContext.Buffer, 0, SContext.Buffer.Length, SocketFlags.None, new AsyncCallback(DoReceive), SContext);
+                                SContext.serverConnection.Client.BeginReceive(SContext.Buffer, 0, SContext.Buffer.Length, SContext.sflag, new AsyncCallback(DoReceive), SContext);
                             }
                             else
                             {
@@ -123,16 +123,56 @@ namespace Proxy
             catch (Exception e) { Log.Error("[GAMESERVER]: Game Server Forcefully Disconnected", e); }
 
             // TODO: No packets bigger then BufferSize are allowed at this time
+
+
             if (received > 0)
             {
-                string result = UTF8Encoding.UTF8.GetString(SContext.Buffer, 0, received);
-                SContext.sb = result.Split('\0');
-                HandleRequest(SContext);
-                SContext.ReceiveReady.Release();
-                if (received == ServerContext.BufferSize)
+                string values = UTF8Encoding.UTF8.GetString(SContext.Buffer, 0, received);
+                if ((received == RCATContext.DefaultBufferSize && !values.EndsWith("\0")) || SContext.IsTruncated)
                 {
-                    throw new Exception("[GAMESERVER]: HTTP Connect packet reached maximum size. FIXME!!");
+                    // There is more data to retrieve. Save current message and prepare for more
+                    if (SContext.IsTruncated == false)
+                    {
+                        // Last message was not truncated
+                        SContext.sb = values.Split(new char[]{'\0'} , StringSplitOptions.RemoveEmptyEntries);
+                        SContext.IsTruncated = true;
+                        SContext.serverConnection.Client.BeginReceive(SContext.Buffer, 0, RCATContext.DefaultBufferSize, SocketFlags.None, new AsyncCallback(DoReceive), SContext);
+                    }
+                    else
+                    {
+                        string[] tmp = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+
+
+                        var list = new List<string>();
+                        list.AddRange(SContext.sb);
+                        // Append last element in RContext.sb to first element of tmp array
+                        list[SContext.sb.Length - 1] = list[SContext.sb.Length - 1] + tmp[0];
+                        // Exclude the first element of tmp, and add it to the list
+                        var segment = new ArraySegment<string>(tmp, 1, tmp.Length - 1);
+                        list.AddRange(segment.Array);
+
+                        SContext.sb = list.ToArray();
+                        Log.Info("[RCAT]: Appended truncated message.");
+
+                        if (values.EndsWith("\0"))
+                        {
+                            SContext.IsTruncated = false;
+                            HandleRequest(SContext);
+                            SContext.ReceiveReady.Release();
+                        }
+                        else
+                        {
+                            SContext.serverConnection.Client.BeginReceive(SContext.Buffer, 0, RCATContext.DefaultBufferSize, SocketFlags.None, new AsyncCallback(DoReceive), SContext);
+                        }
+                    }
                 }
+                else
+                {
+                    SContext.sb = values.Split('\0');
+                    HandleRequest(SContext);
+                    SContext.ReceiveReady.Release();
+                }
+
             }
             else
             {
@@ -144,6 +184,7 @@ namespace Proxy
         // Handles the server request. If position, message.data is a ClientBroadcast object. 
         protected void HandleRequest(ServerContext server)
         {
+            int i = 0;
             //Newtonsoft.Json.Linq.JObject test = new Newtonsoft.Json.Linq.JObject();
             //test.Value<ClientBroadcast>(test)
              //   User Value<User>(message.Data)
@@ -160,11 +201,13 @@ namespace Proxy
                             Proxy.broadcastToClients(cb);
                             // TODO: Implement SendAllUsers
                         }
+                        i++;
                     }
                 }
             }
             catch (Exception e)
             {
+                Log.Warn("Error parsing JSON: " + server.sb[i]);
                 Log.Error("Error parsing JSON in GameServer.HandleRequest",e);
             }
         }
