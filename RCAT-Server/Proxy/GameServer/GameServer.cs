@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Text;
-using System.Net.Sockets;
-using System.Threading;
-using System.Net;
-using log4net;
-using RCAT;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 using Alchemy.Server.Classes;
-using Newtonsoft.Json.Linq;
+using log4net;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using RCAT;
 
 namespace Proxy
 {
@@ -22,6 +22,11 @@ namespace Proxy
         protected Dictionary<string, ServerContext> clientPerServer = new Dictionary<string, ServerContext>();
 
         protected TimeSpan TimeOut = new TimeSpan(0, 30, 0);
+
+        /// <summary>
+        /// This Semaphore limits how many connection events we have active at a time.
+        /// </summary>
+        private SemaphoreSlim ConnectReady = new SemaphoreSlim(10);
 
         protected int roundrobin = 0;
 
@@ -65,6 +70,7 @@ namespace Proxy
                 try
                 {
                     serverListener.BeginAcceptTcpClient(RunServer, null);
+                    ConnectReady.Wait();
                 }
                 catch {/* Ignore */ }
             }
@@ -80,7 +86,8 @@ namespace Proxy
                     TcpConnection = serverListener.EndAcceptTcpClient(AResult);
             }
             catch (Exception e) { Log.Error("Connect Failed", e); }
-
+            
+            ConnectReady.Release();
             if (TcpConnection != null)
             {
                 using (ServerContext SContext = new ServerContext())
@@ -100,7 +107,7 @@ namespace Proxy
                             }
                             else
                             {
-                                Log.Warn("TIMED OUT");
+                                Log.Warn("Game Server timed out. Disconnecting.");
                                 break;
                             }
                         }

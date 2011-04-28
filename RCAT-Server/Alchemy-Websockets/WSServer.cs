@@ -213,7 +213,7 @@ namespace Alchemy.Server
         /// <param name="ListenIp">The listen ip.</param>
         public WSServer(int ListenPort = 0, IPAddress ListenIp = null)
         {
-            LogConfigFile = "Alchemy.config";
+            LogConfigFile = "Log.config";
             LoggerName = "Alchemy.Log";
             if(ListenPort > 0)
                 _Port = ListenPort;
@@ -334,7 +334,7 @@ namespace Alchemy.Server
                             }
                         }
                     }
-                    catch (Exception e) { Log.Error("Client Forcefully Disconnected", e); }
+                    catch (Exception e) { Log.Info("Client Forcefully Disconnected", e); }
                 }
 
                 ClientLock.Wait();
@@ -358,14 +358,15 @@ namespace Alchemy.Server
                 received = AContext.Connection.Client.EndReceive(AResult);
                 AContext.ReceivedByteCount = received;
             }
-            catch (Exception e) { Log.Error("Client Forcefully Disconnected", e); }
+            catch (Exception e) { Log.Info("Client Forcefully Disconnected", e); }
 
             // The HTTP Upgrade packet must not be bigger then BufferSize (4096)
             if (received > 0)
             {
                 if (received == DefaultBufferSize && !AContext.IsSetup)
                 {
-                    throw new Exception("[WS_SERVER]: HTTP Connect packet reached maximum size. Are we missing data?");
+                    Log.Error("[WS_SERVER]: HTTP Connect packet reached maximum size. Are we missing data?");
+                    return;
                 }
                 AContext.Handler.HandleRequest(AContext);
                 AContext.ReceiveReady.Release();

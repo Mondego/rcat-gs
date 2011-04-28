@@ -98,7 +98,7 @@ namespace Proxy
         {
             ClientServer cServer = new ClientServer(Log);
             GameServer gServer = new GameServer(Log);
-            LogConfigFile = "Proxy.config";
+            LogConfigFile = "Log.config";
             LoggerName = "Proxy.Log";
 
             string Command = string.Empty;
