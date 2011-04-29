@@ -13,7 +13,6 @@ using RCAT;
 namespace Proxy
 {
     
-
     public class GameServer
     {
         protected static TcpListener serverListener = null;
@@ -214,8 +213,9 @@ namespace Proxy
             }
             catch (Exception e)
             {
-                Log.Warn("Error parsing JSON: " + server.sb[i]);
-                Log.Error("Error parsing JSON in GameServer.HandleRequest",e);
+                Log.Warn("Error parsing JSON in GameServer.HandleRequest. JSON: " + server.sb[i]);
+                //Log.Error("Error parsing JSON in GameServer.HandleRequest",e);
+                Log.Debug(e);
             }
         }
 

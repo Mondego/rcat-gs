@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using Alchemy.Server.Classes;
-using Newtonsoft.Json;
-
-using System.Threading;
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
-using Newtonsoft.Json.Linq;
+using System.Threading;
+using Alchemy.Server.Classes;
 using log4net;
-using System.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using RCAT.Connectors;
 
 namespace RCAT
 {
@@ -103,22 +103,19 @@ namespace RCAT
         public static ILog Log = LogManager.GetLogger("RCAT.Log");
 
         /// <summary>
+        /// Choose which data connector to use, the MySql or memory;
+        /// </summary>
+        public static DataConnector dataConnector = new MySqlConnector();
+        //public static DataConnector dataConnector = new MemoryConnector();
+
+        /// <summary>
         /// Initialize the application and start the Alchemy Websockets server
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-            MySqlConnector.Connect();
-
-            /*
-            int workerThreads;
-            int portThreads;
-
-            ThreadPool.GetMaxThreads(out workerThreads, out portThreads);
-            Console.WriteLine("\nMaximum worker threads: \t{0}" +
-                "\nMaximum completion port threads: {1}",
-                workerThreads, portThreads);
-            */
+            // Choose which connector to start with
+            dataConnector.Connect();
 
             // Servers register their existence and communicate with proxy through TCP
             try
@@ -282,8 +279,8 @@ namespace RCAT
             }
             catch (Exception e)
             {
-                Log.Warn("JSON message was: " + server.sb[i]);
-                Log.Error(e);
+                Log.Warn("Error parsing JSON in RCAT.HandleRequest. JSON message was: " + server.sb[i]);
+                Log.Debug(e);
             }
         }
 
@@ -324,15 +321,15 @@ namespace RCAT
             {
                 Log.Info("Client Disconnected : " + RContext.message.Data);
 
-                User user = MySqlConnector.GetUser(RContext.message.Data);
+                User user = dataConnector.GetUser(RContext.message.Data);
 
                 Message r = new Message();
 
                 if (!String.IsNullOrEmpty(user.Name))
                 {
-                    string[] clients = MySqlConnector.GetAllUsersNames();
+                    string[] clients = dataConnector.GetAllUsersNames();
                     RContext.Broadcast(user.Name,clients,ResponseType.Disconnect);
-                    MySqlConnector.RemoveUser(user.Name);
+                    dataConnector.RemoveUser(user.Name);
                 }
                 else
                     Log.Warn("ERROR: User not found!");
@@ -354,8 +351,8 @@ namespace RCAT
             {
                 User user = new User();
                 user = (User)serializer.Deserialize(new JTokenReader(RContext.message.Data), typeof(User));
-                MySqlConnector.SetPosition(user.Name, user.pos);
-                string[] clients = MySqlConnector.GetAllUsersNames();
+                dataConnector.SetPosition(user.Name, user.pos);
+                string[] clients = dataConnector.GetAllUsersNames();
                 RContext.Broadcast(user, clients, ResponseType.Position);
             }
             catch (Exception e)
@@ -381,7 +378,7 @@ namespace RCAT
         }
 
         /// <summary>
-        /// Informs a user of all the existing clients, and informing all existing cliets of new user. 
+        /// Informs a user of all the existing clients. 
         /// </summary>
         private static void SendAllUsers(RCATContext RContext)
         {
@@ -392,9 +389,9 @@ namespace RCAT
                 r.Type = ResponseType.AllUsers;
 
                 // Using database
-                User[] arr = MySqlConnector.GetAllUsers();
+                User[] arr = dataConnector.GetAllUsers();
                 r.Data = new { Users = arr };
-                //RContext.Send(JsonConvert.SerializeObject(r));
+                RContext.Send(JsonConvert.SerializeObject(r));
             }
             catch (Exception e)
             {

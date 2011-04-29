@@ -5,17 +5,17 @@ using System.Text;
 using MySql.Data;
 using MySql.Data.MySqlClient;
 using System.Net;
-
+using RCAT.Connectors;
 
 namespace RCAT
 {
-    static class MySqlConnector
+    class MySqlConnector : DataConnector
     {
 
-        public static String connStr = "server=opensim.ics.uci.edu;user=rcat;database=rcat;port=3306;password=isnotamused;";
-        //public static MySqlConnection conn;
+        public String connStr = "server=opensim.ics.uci.edu;user=rcat;database=rcat;port=3306;password=isnotamused;";
+        //public override MySqlConnection conn;
         
-        public static void Connect()
+        public override void Connect()
         {
             MySqlConnection conn = new MySqlConnection(connStr);
             try
@@ -35,12 +35,12 @@ namespace RCAT
             Console.WriteLine("Done.");
         }
 
-        public static Boolean CheckConnection()
+        public Boolean CheckConnection()
         {
             return true;
         }
 
-        public static void SetPosition(string userName, Position pos)
+        public override void SetPosition(string userName, Position pos)
         {
             MySqlConnection conn = new MySqlConnection(connStr);
             try
@@ -59,7 +59,7 @@ namespace RCAT
             conn.Close();
         }
 
-        public static int GetCount()
+        public override int GetCount()
         {
             MySqlConnection conn = new MySqlConnection(connStr);
             object result = null;
@@ -83,7 +83,7 @@ namespace RCAT
         }
 
 
-        public static void RemoveUser(string userName)
+        public override void RemoveUser(string userName)
         {
             MySqlConnection conn = new MySqlConnection(connStr);
             try
@@ -102,7 +102,7 @@ namespace RCAT
 
         }
 
-        public static User GetUser(string userName)
+        public override User GetUser(string userName)
         {
             MySqlConnection conn = new MySqlConnection(connStr);
             User user = null;
@@ -131,7 +131,7 @@ namespace RCAT
             return user;
         }
 
-        public static string[] GetAllUsersNames()
+        public override string[] GetAllUsersNames()
         {
             MySqlConnection conn = new MySqlConnection(connStr);
             string[] allUsers = null;
@@ -162,7 +162,7 @@ namespace RCAT
             return allUsers;
         }
         
-        public static User[] GetAllUsers()
+        public override User[] GetAllUsers()
         {
             MySqlConnection conn = new MySqlConnection(connStr);
             User[] allUsers = null;
@@ -198,27 +198,6 @@ namespace RCAT
             return allUsers;
         }
 
-        public static ulong IPStringToulong(String userName)
-        {
-            String[] splitted = userName.Split(':');
-            IPAddress myIp = IPAddress.Parse(splitted[0]);
-            byte[] myBytes = myIp.GetAddressBytes();
-            
-            int tmpAddress = BitConverter.ToInt32(myBytes, 0);
-            ulong intAddress = (ulong)tmpAddress;
-
-            intAddress = (intAddress << 32);
-            return intAddress + ulong.Parse(splitted[1]);
-        }
-
-        public static String IPulongToString(ulong key)
-        {
-            ulong port = (key << 32) >> 32;
-            int ip = (int)(key >> 32);
-
-            string ipAddress = new IPAddress(BitConverter.GetBytes(ip)).ToString();
-
-            return ipAddress + ":" + port.ToString();
-        }
+        
     }
 }
