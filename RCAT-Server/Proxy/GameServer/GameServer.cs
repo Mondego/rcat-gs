@@ -18,7 +18,6 @@ namespace Proxy
         protected static TcpListener serverListener = null;
 
         protected List<ServerContext> onlineServers = new List<ServerContext>();
-        protected Dictionary<string, ServerContext> clientPerServer = new Dictionary<string, ServerContext>();
 
         protected TimeSpan TimeOut = new TimeSpan(0, 30, 0);
 
@@ -128,9 +127,6 @@ namespace Proxy
             }
             catch (Exception e) { Log.Error("[GAMESERVER]: Game Server Forcefully Disconnected", e); }
 
-            // TODO: No packets bigger then BufferSize are allowed at this time
-
-
             if (received > 0)
             {
                 string values = UTF8Encoding.UTF8.GetString(SContext.Buffer, 0, received);
@@ -222,7 +218,8 @@ namespace Proxy
         // Sends client data to the server
         public void SendPosition(User client)
         {
-            ServerContext server = clientPerServer[client.Name];
+            //ServerContext server = clientPerServer[client.Name];
+            ServerContext server = PickServer();
             
             TimeStampedMessage resp = new TimeStampedMessage();
             resp.Type = ResponseType.Position;
@@ -237,7 +234,6 @@ namespace Proxy
         public void SendClientConnect(UserContext client)
         {
             ServerContext server = PickServer();
-            clientPerServer.Add(client.ClientAddress.ToString(), server);
 
             Message resp = new Message();
             resp.Type = ResponseType.Connection;
@@ -257,8 +253,7 @@ namespace Proxy
 
         public void SendClientDisconnect(UserContext client)
         {
-            ServerContext server = clientPerServer[client.ClientAddress.ToString()];
-            clientPerServer.Remove(client.ClientAddress.ToString());
+            ServerContext server = PickServer();
 
             Message resp = new Message();
             resp.Type = ResponseType.Disconnect;

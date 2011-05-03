@@ -64,7 +64,7 @@ namespace RCAT
         /// </summary>
         //protected static IList<User> OnlineUsers = new List<User>();
         //protected static Dictionary<String, UserContext> onlineUsers = new Dictionary<string,UserContext>();
-        public static List<string> onlineUsers = new List<string>();
+        //public static List<string> onlineUsers = new List<string>();
 
         public static TcpClient proxy = null;
 
@@ -300,7 +300,7 @@ namespace RCAT
             {
                 Log.Info("Client Connection From : " + (string)RContext.message.Data);
 
-                onlineUsers.Add(RContext.message.Data);
+                //onlineUsers.Add(RContext.message.Data);
                 SendAllUsers(RContext);
             }
             catch (Exception e)
