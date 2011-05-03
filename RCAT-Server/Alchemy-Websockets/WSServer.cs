@@ -64,7 +64,7 @@ namespace Alchemy.Server
         /// <summary>
         /// This Semaphore limits how many connection events we have active at a time.
         /// </summary>
-        private SemaphoreSlim ConnectReady = new SemaphoreSlim(10);
+        private SemaphoreSlim ConnectReady = new SemaphoreSlim(20);
 
         private string _OriginHost = String.Empty;
         private string _DestinationHost = String.Empty;

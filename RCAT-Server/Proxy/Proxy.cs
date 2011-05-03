@@ -41,8 +41,10 @@ namespace Proxy
         /// <param name="client"></param>
         public delegate void SendClientConnectToServer(UserContext client);
 
-        // Gameserver and Clientserver are responsible to implement these methods
+        // Clientserver implements this method
         public static BroadcastToClients broadcastToClients;
+
+        // Gameserver implements these methods
         public static SendSetPosToServer sendSetPositionToServer;
         public static SendClientDisconnectToServer sendClientDisconnectToServer;
         public static SendClientConnectToServer sendClientConnectToServer;
@@ -96,8 +98,9 @@ namespace Proxy
 
         static void Main(string[] args)
         {
-            ClientServer cServer = new ClientServer(Log);
-            GameServer gServer = new GameServer(Log);
+            ClientServer cServer = new ClientServer(Log); // handles communication with clients through websocket protocol
+            GameServer gServer = new GameServer(Log); //handles communication with servants through TCP
+            Console.WriteLine("Proxy up and running. Type 'exit' to terminate it.");
             LogConfigFile = "Log.config";
             LoggerName = "Proxy.Log";
 

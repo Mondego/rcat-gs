@@ -130,7 +130,7 @@ namespace RCAT
                 //"128.195.4.46", 882
                 Thread.Sleep(2000);
                 proxy = new TcpClient();
-                proxy.BeginConnect("opensim.ics.uci.edu", 882, RunServer, null);
+                proxy.BeginConnect("chateau.ics.uci.edu", 882, RunServer, null);
                 Log.Info("RCAT Server started!");
 
                 //Listener = new TcpListener(IPAddress.Any, Port);

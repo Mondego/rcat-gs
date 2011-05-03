@@ -32,7 +32,7 @@ namespace Proxy
 
         public static ILog Log;
 
-        public int serverPort = 882;
+        public int _SERVERPORT = 882;
 
         protected void RegisterProxyMethods()
         {
@@ -51,7 +51,7 @@ namespace Proxy
             {
                 try
                 {
-                    serverListener = new TcpListener(IPAddress.Any, serverPort);
+                    serverListener = new TcpListener(IPAddress.Any, _SERVERPORT);
                     ThreadPool.QueueUserWorkItem(serverListen, null);
                 }
                 catch { Log.Error("Game Server failed to start"); }
@@ -231,6 +231,7 @@ namespace Proxy
             server.Send(Newtonsoft.Json.JsonConvert.SerializeObject(resp) + '\0');
         }
 
+        // notify a server that a client just connected
         public void SendClientConnect(UserContext client)
         {
             ServerContext server = PickServer();
@@ -242,6 +243,7 @@ namespace Proxy
             server.Send(Newtonsoft.Json.JsonConvert.SerializeObject(resp));
         }
 
+        // pick a server at round-robin to forward a packet to
         protected ServerContext PickServer()
         {
             ServerContext server =  onlineServers[roundrobin];
@@ -251,6 +253,7 @@ namespace Proxy
             return server;
         }
 
+        // notify a client that another client disconnected
         public void SendClientDisconnect(UserContext client)
         {
             ServerContext server = PickServer();
@@ -262,6 +265,7 @@ namespace Proxy
             server.Send(Newtonsoft.Json.JsonConvert.SerializeObject(resp));
         }
 
+        // when proxy is stopped
         public void Stop()
         {
             serverListener.Stop();
