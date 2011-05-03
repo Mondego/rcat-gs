@@ -33,6 +33,11 @@ namespace RCAT
         public dynamic Data { get; set; }
     }
 
+    public class TimeStampedMessage : Message
+    {
+        public long TimeStamp { get; set; }
+    }
+
     /// <summary>
     /// Structure for sending broadcast information from Server to Clients. Contains the data to be sent and an array of clients that should receive it.
     /// </summary>
@@ -264,7 +269,7 @@ namespace RCAT
                     if (s != "")
                     {
                         Log.Info("[FROM PROXY]: Strings in SB" + s);
-                        Message message = Newtonsoft.Json.JsonConvert.DeserializeObject<Message>(s);
+                        TimeStampedMessage message = Newtonsoft.Json.JsonConvert.DeserializeObject<TimeStampedMessage>(s);
                         server.message = message;
 
                         if (message.Type == ResponseType.Connection)
@@ -351,7 +356,7 @@ namespace RCAT
             {
                 User user = new User();
                 user = (User)serializer.Deserialize(new JTokenReader(RContext.message.Data), typeof(User));
-                dataConnector.SetPosition(user.Name, user.pos);
+                dataConnector.SetPosition(user.Name, user.pos, RContext.message.TimeStamp);
                 string[] clients = dataConnector.GetAllUsersNames();
                 RContext.Broadcast(user, clients, ResponseType.Position);
             }

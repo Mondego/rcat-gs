@@ -15,7 +15,7 @@ namespace RCAT
         public string[] sb = null;
         public byte[] buffer = new byte[DefaultBufferSize];
         public TcpClient proxyConnection;
-        public Message message;
+        public TimeStampedMessage message;
         public SemaphoreSlim ReceiveReady = new SemaphoreSlim(1);
         public bool IsTruncated = false;
 

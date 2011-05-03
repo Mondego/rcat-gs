@@ -6,7 +6,7 @@ namespace RCAT.Connectors
     public abstract class DataConnector
     {
         public abstract void Connect();
-        public abstract void SetPosition(string userName, Position pos);
+        public abstract void SetPosition(string userName, Position pos, long timestamp);
 
         public abstract int GetCount();
         public abstract void RemoveUser(string userName);

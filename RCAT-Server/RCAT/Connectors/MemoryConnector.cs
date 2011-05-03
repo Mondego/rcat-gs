@@ -14,7 +14,7 @@ namespace RCAT.Connectors
             Console.WriteLine("Memory Data Connector Started!");
         }
 
-        public override void SetPosition(string userName, Position pos)
+        public override void SetPosition(string userName, Position pos, long timestamp)
         {
             if (onlineUsers.ContainsKey(userName))
             {

@@ -224,9 +224,10 @@ namespace Proxy
         {
             ServerContext server = clientPerServer[client.Name];
             
-            Message resp = new Message();
+            TimeStampedMessage resp = new TimeStampedMessage();
             resp.Type = ResponseType.Position;
             resp.Data = client;
+            resp.TimeStamp = DateTime.Now.Ticks;
 
             Log.Info("Sending Client info: " + resp.Data.ToString());
             

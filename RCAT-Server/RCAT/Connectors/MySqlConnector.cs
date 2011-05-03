@@ -40,14 +40,17 @@ namespace RCAT
             return true;
         }
 
-        public override void SetPosition(string userName, Position pos)
+        public override void SetPosition(string userName, Position pos, long newstamp)
         {
             MySqlConnection conn = new MySqlConnection(connStr);
             try
             {
                 conn.Open();
                 ulong name = IPStringToulong(userName);
-                string sql = string.Format("INSERT INTO users (`name`, `top`, `left`) VALUES ({0}, {1}, {2}) ON DUPLICATE KEY UPDATE `top`={1},`left`={2}", name, pos.top.ToString(), pos.left.ToString());
+                // MySQL silently drops insert/update query if no new changes are made to the rows
+                string sql = string.Format("INSERT INTO users (`name`, `top`, `left`,`timestamp`) VALUES ({0}, {1}, {2}, {3}) "+
+                "ON DUPLICATE KEY UPDATE `top`=IF(timestamp < VALUES(timestamp), {1}, `top`)," +
+                "`left`=IF(timestamp < VALUES(timestamp), {2}, `left`),`timestamp`=IF(timestamp < VALUES(timestamp), {3}, `timestamp`)", name, pos.top.ToString(), pos.left.ToString(), newstamp.ToString());
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 
