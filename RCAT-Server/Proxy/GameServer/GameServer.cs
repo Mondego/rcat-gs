@@ -22,9 +22,10 @@ namespace Proxy
         protected TimeSpan TimeOut = new TimeSpan(0, 30, 0);
 
         /// <summary>
-        /// This Semaphore limits how many connection events we have active at a time.
+        /// This Semaphore limits how many simultaneous handshake events we have active at a time.
         /// </summary>
-        private SemaphoreSlim ConnectReady = new SemaphoreSlim(10);
+        private static int _MAX_SIMULTANEOUS_HANDSHAKE = 5; //todo: put that in config
+        private SemaphoreSlim ConnectReady = new SemaphoreSlim(_MAX_SIMULTANEOUS_HANDSHAKE);
 
         protected int roundrobin = 0;
 
@@ -32,7 +33,7 @@ namespace Proxy
 
         public static ILog Log;
 
-        public int _SERVERPORT = 882;
+        protected static int _SERVERLISTENERPORT = 82; //todo: put this in an external  config file
 
         protected void RegisterProxyMethods()
         {
@@ -43,7 +44,6 @@ namespace Proxy
 
         public GameServer(ILog log)
         {
-            // Servers register their existence and communicate with proxy through TCP
             Log = log;
             RegisterProxyMethods();
 
@@ -51,15 +51,22 @@ namespace Proxy
             {
                 try
                 {
-                    serverListener = new TcpListener(IPAddress.Any, _SERVERPORT);
+                    // Servers register their existence and communicate with proxy through TCP
+                    serverListener = new TcpListener(IPAddress.Any, _SERVERLISTENERPORT);
                     ThreadPool.QueueUserWorkItem(serverListen, null);
                 }
-                catch { Log.Error("Game Server failed to start"); }
+                catch (Exception e) {
+                    Log.Error("[PROXY->SERVANT] Game Server failed to start", e); 
+                }
             }
-
-            // Accept commands on the console and keep it alive
         }
 
+
+        
+        /// <summary>
+        /// Listen for new servants connecting by TCP to port _SERVERLISTENERPORT
+        /// </summary>
+        /// <param name="State"></param>
         protected void serverListen(object State)
         {
             serverListener.Start();
@@ -69,26 +76,40 @@ namespace Proxy
                 {
                     serverListener.BeginAcceptTcpClient(RunServer, null);
                     ConnectReady.Wait();
+                    // the semaphore ConnectReady allows up to _MAX_SIMULTANEOUS_HANDSHAKE TCP handshakes to happen simultaneously
+                    // this is only the max number of simultaneous handshakes, NOT the max number of servant connections!
                 }
-                catch {/* Ignore */ }
+                catch (Exception e) {
+                    Log.Error("[PROXY->SERVANT]: Error while waiting for servants to connect in serverListen. ", e);
+                }
             }
         }
 
+        /// <summary>
+        /// Handle TCP connections initiated by servants and receive data from the TCP pipe.
+        /// </summary>
+        /// <param name="AResult"></param>
         protected void RunServer(IAsyncResult AResult)
         {
             // Server connection
             TcpClient TcpConnection = null;
-            try
+            // Accept connection between servant and proxy
+            if (serverListener != null)
             {
-                if (serverListener != null)
+                try
+                {
                     TcpConnection = serverListener.EndAcceptTcpClient(AResult);
+                }
+                catch (Exception e)
+                {
+                    Log.Error("[PROXY->SERVANT]: Connection with servant failed. ", e);
+                }
             }
-            catch (Exception e) { Log.Error("Connect Failed", e); }
-            
-            ConnectReady.Release();
+            // Fill each SContext with information related to a particular servant and keep readin in the TCP pipe.
+            ConnectReady.Release(); //decrease semaphore by 1
             if (TcpConnection != null)
             {
-                using (ServerContext SContext = new ServerContext())
+                using (ServerContext SContext = new ServerContext()) 
                 //each server has its own context
                 {
                     SContext.gameServer = this;
@@ -97,6 +118,7 @@ namespace Proxy
                     onlineServers.Add(SContext);
                     try
                     {
+                        // When something has arrived in the TCP pipe, process it
                         while (SContext.serverConnection.Connected)
                         {
                             if (SContext.ReceiveReady.Wait(TimeOut))
@@ -105,17 +127,23 @@ namespace Proxy
                             }
                             else
                             {
-                                Log.Warn("Game Server timed out. Disconnecting.");
+                                Log.Warn("[PROXY->SERVANT]: Game Server timed out. Disconnecting.");
                                 break;
                             }
                         }
                     }
-                    catch (Exception e) { Log.Error("Game Server Forcefully Disconnected", e); }
+                    catch (Exception e) {
+                        Log.Error("[PROXY->SERVANT]: Game Server Forcefully Disconnected.", e); 
+                    }
                 }
+                //at this point, the connexion with the servant has been lost, therefore ServerContext.Dispose() is called (because end of the using(){} block). 
             }
         }
 
-        // Events generated by servers connecting to proxy
+        /// <summary>
+        /// Events generated by servers connecting to the proxy
+        /// </summary>
+        /// <param name="AResult"></param>
         private void DoReceive(IAsyncResult AResult)
         {
             ServerContext SContext = (ServerContext)AResult.AsyncState;

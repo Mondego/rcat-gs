@@ -23,7 +23,7 @@ namespace RCAT
         AllUsers = 3,
         Error = 255
     }
-
+            
     /// <summary>
     /// Defines the response object to send back to the client
     /// </summary>
@@ -70,7 +70,7 @@ namespace RCAT
 
         public static JsonSerializer serializer = new JsonSerializer();
 
-        public static int Port = 82;
+        protected static int _PROXYPORT = 82; // todo: put this in an external config file
 
         public static TimeSpan TimeOut = new TimeSpan(0, 30, 0);
 
@@ -127,10 +127,10 @@ namespace RCAT
             {
                 LogConfigFile = "RCAT.config";
                 LoggerName = "RCAT.Log";
-                //"128.195.4.46", 882
+                //"128.195.4.46", 82
                 Thread.Sleep(2000);
                 proxy = new TcpClient();
-                proxy.BeginConnect("chateau.ics.uci.edu", 882, RunServer, null);
+                proxy.BeginConnect("chateau.ics.uci.edu", _PROXYPORT, RunServer, null);
                 Log.Info("RCAT Server started!");
 
                 //Listener = new TcpListener(IPAddress.Any, Port);
