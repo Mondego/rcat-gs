@@ -52,7 +52,6 @@
 Server: <input id="serverUrl" value="ws://chateau.ics.uci.edu:81/websocket"/>
 <button id="connect">Connect</button>
 <button id="disconnect" style="display:none">Disconnect</button>
-<button id="cancelNPC">Take Control!</button>
 </div>
 
 <script type="text/javascript">
@@ -62,6 +61,8 @@ var usersTable = new Hashtable(); //will contain users' names and positions, ind
 var npcTimer;
 var POS_SHIFT = 20; // the movement granularity
 var socket;
+var currentTop = 20 * Math.floor(Math.random()*20); //starting coords of lightClients
+var currentLeft = 20 * Math.floor(Math.random()*20);
 
 // ============================ NETWORK =================
 
@@ -78,7 +79,6 @@ function log(txt){
 	msecs = msecs > 99 ? msecs : (msecs > 9 ? "0"+msecs : "00"+msecs);
 	$('#chatLog').prepend("<br/>" + now.getHours() + ":" + mins + ":" + secs + ":" + msecs + " - " + txt + "<br/>");
 }
-
 
 
 if(!("WebSocket" in window)){
@@ -126,50 +126,46 @@ function connect(){
 	document.onkeypress = function (e) {
 		var keyCode = e.keyCode ? e.keyCode : e.charCode; //firefox (charcode) vs others (keycode)
 		//alert(keyCode);
-		switch(keyCode) {
-		case 37: //arrowleft
-		case 97: //a
-			iMoved(1);
-			break;
-		case 119: //w
-		case 38: //arrowup
-			iMoved(2);
-			break;
-		case 39: //arrowright
-		case 100: //d
-			iMoved(3);
-			break;
-		case 40: //arrowdown
-		case 115: //s
-			iMoved(4);
-			break;
-		default:
-			break;
-		}
+		updatePos(keyCode);
 	};
 	
-}
-
-function iMoved(dir) {
-	var avatar = document.getElementById("avatar");
-	switch(dir) {
-	case 1: //left
-		avatar.style.left = avatar.offsetLeft - POS_SHIFT;
-		break;
-	case 3: //right
-		avatar.style.left = avatar.offsetLeft + POS_SHIFT;
-		break;
-	case 2: //up
-		avatar.style.top = avatar.offsetTop - POS_SHIFT;
-		break;
-	case 4: //down
-		avatar.style.top = avatar.offsetTop + POS_SHIFT;
-		break;
-	}
-	sendPos();
-}
 
 	
+}
+
+function updatePos(k) {
+	var topUpdate = 0;
+	var leftUpdate = 0;
+	switch(k) {
+	case 37: //arrowleft
+	case 97: //a
+		leftUpdate = - POS_SHIFT;
+		break;
+	case 119: //w
+	case 38: //arrowup
+		topUpdate = - POS_SHIFT;
+		break;
+	case 39: //arrowright
+	case 100: //d
+		leftUpdate = POS_SHIFT;
+		break;
+	case 40: //arrowdown
+	case 115: //s
+		topUpdate = POS_SHIFT;
+		break;
+	default:
+		break;
+	}
+	currentTop = currentTop + topUpdate;
+	currentLeft = currentLeft + leftUpdate;
+	if(currentTop <= 0)
+		currentTop = currentTop + POS_SHIFT;
+	else if(currentLeft <= 0)
+		currentLeft = currentLeft + POS_SHIFT;
+	sendPos();
+};
+
+
 function disconnect() {
 	clearTimeout(npcTimer);
 	socket.close();
@@ -190,7 +186,7 @@ function receivePos(name, top, left){
 	if(usersTable.containsKey(name)) { //user was already displayed
 		usersTable.get(name).top = top;
 		usersTable.get(name).left = left;
-		moveAvatar(name,top,left); //update graphics
+		//moveAvatar(name,top,left); //update graphics
 	}
 	else { //new user to draw
 		var userCoords = {"top":top, "left":left}; //JSON storage
@@ -202,17 +198,16 @@ function receivePos(name, top, left){
 
 // send my position to the server
 function sendPos(){
-	var avatar = document.getElementById("avatar");
 	var pos = {
-		"top": avatar.offsetTop,
-		"left": avatar.offsetLeft 
+		"top": currentTop,
+		"left": currentLeft
 		}; 
 	var txt = JSON.stringify(pos);
 	try{
 		socket.send(txt);
 		log('Sent: '+txt)
 	} catch(exception){
-		log('Exception in sendPos: '+exception);
+		log('Exception in sendPos: ' + exception);
 	}
 }
 
@@ -222,31 +217,17 @@ function sendPos(){
 
 // graphically move an avatar
 function moveAvatar(name,top,left) { //el being the div to move
-	var el = document.getElementById(name);
-	var oldTop = el.offsetTop;
-	var oldLeft = el.offsetLeft;
-	el.style.top = top;
-	el.style.left = left;
-	//this could be more sophisticated, eg use jquery to make the div flow from previous offsetTop/Left to new top and left
+	
 }
 
 // graphically create an avatar
 function createAvatar(name, top, left) {
-	el = document.createElement("div");
-	el.id = name;
-	el.setAttribute('class','player');
-	el.innerHTML = name;
-	el.style.top = top;
-	el.style.left = left;
-	el.style.backgroundColor = getRgbFromName(name);
-	document.body.appendChild(el);
-	//log(name+ "created");
+	
 }
 
 // graphically create an avatar
 function deleteAvatar(name) {
-	el = document.getElementById(name);
-	document.body.removeChild(el);
+
 }
 
 
@@ -274,14 +255,9 @@ $('#connect').bind('click', function(e) {
 });
 
 
-$('#cancelNPC').bind('click', function(e) {
-	clearTimeout(npcTimer);
-	$('#cancelNPC').hide();
-});
-
 function runAsNpc() {
-	iMoved(Math.floor(Math.random()*4+1));
-	npcTimer = setTimeout(runAsNpc, 1000);
+	updatePos(37+Math.floor(Math.random()*4));
+	npcTimer = setTimeout(runAsNpc, 50);
 }
 
 connect();
