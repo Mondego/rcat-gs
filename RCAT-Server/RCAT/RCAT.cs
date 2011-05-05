@@ -269,6 +269,7 @@ namespace RCAT
                     if (s != "")
                     {
                         Log.Info("[FROM PROXY]: Strings in SB" + s);
+                        // a bug happens at this line when the servant has to concatenate multiple JSON msg together
                         TimeStampedMessage message = Newtonsoft.Json.JsonConvert.DeserializeObject<TimeStampedMessage>(s);
                         server.message = message;
 

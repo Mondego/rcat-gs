@@ -25,46 +25,63 @@ namespace Proxy
 
         public bool IsTruncated = false;
 
+        /// <summary>
+        /// Maximum number of bytes that can be read at once from the TCP channel 
+        /// </summary>
         public static int BufferSize = 4096;
 
-        //Receive buffer
+        // buffer storing what has been received from the TCP channel
         public byte[] Buffer = new byte[BufferSize];
 
-        //Send buffer
+        // buffer that has to be sent through the TCP channel
         public byte[] SendBuffer = new byte[BufferSize];
 
         public SemaphoreSlim ReceiveReady = new SemaphoreSlim(1);
 
         public GameServer gameServer = null;
 
+        /// <summary>
+        /// create a ServerContext using a tcpclient tc and tied to the proxy's gameserver gs
+        /// </summary>
+        /// <param name="gs"></param>
+        /// <param name="tc"></param>
+        /// <param name="ep"></param>
+        public ServerContext(GameServer gs, TcpClient tc)
+        {
+            this.gameServer = gs;
+            this.serverConnection = tc;
+            this.ClientAddress = this.serverConnection.Client.RemoteEndPoint;
+        }
+
+        /// <summary>
+        /// send a string to a servant
+        /// </summary>
+        /// <param name="Data"></param>
         public void Send(string Data)
         {
             Send(UTF8Encoding.UTF8.GetBytes(Data + '\0'));
         }
 
         /// <summary>
-        /// Sends the specified data.
+        /// Send a byte array to a servant.
         /// </summary>
-        /// <param name="Data">The data.</param>
-        /// <param name="AContext">The user context.</param>
-        /// <param name="Close">if set to <c>true</c> [close].</param>
+        /// <param name="Data">The data to be sent.</param>
         private void Send(byte[] Data)
         {
-            AsyncCallback ACallback = EndSend;
             try
             {
                 Data.CopyTo(SendBuffer,0);
-                serverConnection.Client.BeginSend(SendBuffer, 0, Data.Length, SocketFlags.None, ACallback, this);
+                serverConnection.Client.BeginSend(SendBuffer, 0, Data.Length, SocketFlags.None, EndSend, this);
             }
-            catch
+            catch (Exception e)
             {
-                GameServer.Log.Info("[ServerContext]: Exception sending");
+                GameServer.Log.Info("[PROXY->SERVANT]: Exception in ServerContext while sending.", e);
                 //AContext.SendReady.Release();
             }
         }
 
         /// <summary>
-        /// Ends the send.
+        /// Callback called when bytes have been sent from a proxy to a servant.
         /// </summary>
         /// <param name="AResult">The Async result.</param>
         public void EndSend(IAsyncResult AResult)
@@ -73,18 +90,19 @@ namespace Proxy
             try
             {
                 SContext.serverConnection.Client.EndSend(AResult);
-                GameServer.Log.Info("[PROXY->SERVER]: " + UTF8Encoding.UTF8.GetString(SContext.SendBuffer,0,1024));
+                GameServer.Log.Info("[PROXY->SERVANT]: Sent " + UTF8Encoding.UTF8.GetString(SContext.SendBuffer,0,1024));
                 //AContext.SendReady.Release();
             }
-            catch
+            catch (Exception e)
             {
-                GameServer.Log.Info("[ServerContext]: Exception end send");
+                GameServer.Log.Info("[PROXY->SERVANT]: Exception in ServerContext.EndSend", e);
                 //AContext.SendReady.Release(); 
             }
         }
 
         /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Freeing, releasing, or resetting unmanaged resources. Use this method when you need to free a big object before the end of a function call. 
+        /// This method is called at the end of a using{} block
         /// </summary>
         public void Dispose()
         {
@@ -92,14 +110,14 @@ namespace Proxy
             {
                 serverConnection.Client.Close();
                 serverConnection = null;
+                GameServer.Log.Warn("[PROXY->SERVANT]: in ServerContext: servant disconnected." + serverConnection.Client.RemoteEndPoint.ToString()); 
             }
-            catch (Exception e) { GameServer.Log.Info("Client Already Disconnected", e); }
+            catch (Exception e) {
+                GameServer.Log.Info("[PROXY->SERVANT]: in ServerContext: client already disconnected, ", e); 
+            }
             finally
             {
-                if (Connected)
-                {
-                    Connected = false;
-                }
+                Connected = false;
             }
         }
     }

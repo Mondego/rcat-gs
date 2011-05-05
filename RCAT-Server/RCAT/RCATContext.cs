@@ -9,7 +9,7 @@ namespace RCAT
 {
     public class RCATContext : IDisposable
     {
-        // TODO: Default buffer size. Should set this somewhere global?
+        // TODO: this constant should be set in a config file
         public static int DefaultBufferSize = 4096;
         //public StringBuilder sb = new StringBuilder();
         public string[] sb = null;
@@ -50,10 +50,12 @@ namespace RCAT
             AsyncCallback ACallback = EndSend;
             try
             {
-                if (Data.Length > RCATContext.DefaultBufferSize)
-                    proxyConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.Truncated, ACallback, this);
-                else
-                    proxyConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.None, ACallback, this);
+                SocketFlags sf = (Data.Length > RCATContext.DefaultBufferSize) ? SocketFlags.Truncated : SocketFlags.None;
+                proxyConnection.Client.BeginSend(Data, 0, Data.Length, sf, ACallback, this);
+                //if (Data.Length > RCATContext.DefaultBufferSize)
+                //    proxyConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.Truncated, ACallback, this);
+                //else
+                //    proxyConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.None, ACallback, this);
             }
             catch
             {
