@@ -40,5 +40,65 @@ namespace RCAT.Properties {
                 return ((int)(this["proxyport"]));
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("opensim.ics.uci.edu")]
+        public string mysql_server {
+            get {
+                return ((string)(this["mysql_server"]));
+            }
+            set {
+                this["mysql_server"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("rcat")]
+        public string mysql_user {
+            get {
+                return ((string)(this["mysql_user"]));
+            }
+            set {
+                this["mysql_user"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("isnotamused")]
+        public string mysql_pass {
+            get {
+                return ((string)(this["mysql_pass"]));
+            }
+            set {
+                this["mysql_pass"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("rcat")]
+        public string mysql_database {
+            get {
+                return ((string)(this["mysql_database"]));
+            }
+            set {
+                this["mysql_database"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3306")]
+        public string mysql_port {
+            get {
+                return ((string)(this["mysql_port"]));
+            }
+            set {
+                this["mysql_port"] = value;
+            }
+        }
     }
 }

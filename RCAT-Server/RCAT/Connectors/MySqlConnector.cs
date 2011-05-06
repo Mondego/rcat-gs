@@ -12,7 +12,7 @@ namespace RCAT
     class MySqlConnector : DataConnector
     {
 
-        public String connStr = "server=opensim.ics.uci.edu;user=rcat;database=rcat;port=3306;password=isnotamused;";
+        public String connStr = "server="+Properties.Settings.Default.mysql_server+";user="+Properties.Settings.Default.mysql_user+";database="+Properties.Settings.Default.mysql_database+";port="+Properties.Settings.Default.mysql_port+";password="+Properties.Settings.Default.mysql_pass+";";
         //public override MySqlConnection conn;
         
         public override void Connect()
