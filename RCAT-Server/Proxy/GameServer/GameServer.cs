@@ -229,12 +229,15 @@ namespace Proxy
                 {
                     if (s != "")
                     {
-                        Message message = Newtonsoft.Json.JsonConvert.DeserializeObject<Message>(s);
+                        ClientMessage message = Newtonsoft.Json.JsonConvert.DeserializeObject<ClientMessage>(s);
                         if (message.Type == ResponseType.Position)
                         {
-                            ClientBroadcast cb = (ClientBroadcast)serializer.Deserialize(new JTokenReader(message.Data), typeof(ClientBroadcast));
-                            Proxy.broadcastToClients(cb);
+                            Proxy.broadcastToClients(message);
                             // TODO: Implement SendAllUsers
+                        }
+                        else if (message.Type == ResponseType.AllUsers)
+                        {
+                            Proxy.broadcastToClients(message);
                         }
                         i++;
                     }
@@ -257,7 +260,7 @@ namespace Proxy
             //ServerContext server = clientPerServer[client.Name];
             ServerContext server = PickServer();
             
-            TimeStampedMessage resp = new TimeStampedMessage();
+            ServerMessage resp = new ServerMessage();
             resp.Type = ResponseType.Position;
             resp.Data = client;
             resp.TimeStamp = DateTime.Now.Ticks;

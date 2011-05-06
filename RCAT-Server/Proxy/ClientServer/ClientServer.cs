@@ -117,22 +117,23 @@ namespace Proxy
         ///send the same data to multiple clients (broadcast contains the data to send and the array of clients to send to) 
         /// </summary>
         /// <param name="broadcast"></param>
-        public void BroadcastToClients(ClientBroadcast broadcast)
+        public void BroadcastToClients(ClientMessage broadcast)
         {
             foreach (string client in broadcast.clients)
             {
-                UserContext cl = Proxy.onlineUsers[client];
+                try
+                {
+                    UserContext cl = Proxy.onlineUsers[client];
 
-                Message m = new Message();
+                    //broadcast.Data = new { Name = (string)broadcast.data["Name"], Position = new Position((int)broadcast.data["pos"]["top"], (int)broadcast.data["pos"]["left"]) };
+                    string json = JsonConvert.SerializeObject(broadcast);
 
-                //User usr = (User)serializer.Deserialize(new JTokenReader(broadcast.data), typeof(User));
-                //m.Data = JsonConvert.SerializeObject(usr);
-
-                m.Data = new { Name = (string)broadcast.data["Name"], Position = new Position((int)broadcast.data["pos"]["top"], (int)broadcast.data["pos"]["left"]) };
-                m.Type = broadcast.type; 
-                string json = JsonConvert.SerializeObject(m);
-
-                cl.Send(json);
+                    cl.Send(json);
+                }
+                catch (Exception e)
+                {
+                    Log.Debug("[ClientServer]: User " + client + " not found in proxy. Likely on another proxy?",e);
+                }
             }
         }
     }

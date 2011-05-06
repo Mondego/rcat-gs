@@ -33,19 +33,17 @@ namespace RCAT
         public dynamic Data { get; set; }
     }
 
-    public class TimeStampedMessage : Message
+    public class ServerMessage : Message
     {
         public long TimeStamp { get; set; }
     }
-
+    
     /// <summary>
     /// Structure for sending broadcast information from Server to Clients. Contains the data to be sent and an array of clients that should receive it.
     /// </summary>
-    public struct ClientBroadcast
+    public class ClientMessage : Message
     {
-        public dynamic data;
         public string[] clients;
-        public ResponseType type;
     }
 
     class RCAT
@@ -130,7 +128,7 @@ namespace RCAT
                 //"128.195.4.46", 82
                 Thread.Sleep(2000);
                 proxy = new TcpClient();
-                proxy.BeginConnect("chateau.ics.uci.edu", _PROXYPORT, RunServer, null);
+                proxy.BeginConnect("opensim.ics.uci.edu", _PROXYPORT, RunServer, null);
                 Log.Info("RCAT Server started!");
 
                 //Listener = new TcpListener(IPAddress.Any, Port);
@@ -269,8 +267,8 @@ namespace RCAT
                     if (s != "")
                     {
                         Log.Info("[FROM PROXY]: Strings in SB" + s);
+                        ServerMessage message = Newtonsoft.Json.JsonConvert.DeserializeObject<ServerMessage>(s);
                         // a bug happens at this line when the servant has to concatenate multiple JSON msg together
-                        TimeStampedMessage message = Newtonsoft.Json.JsonConvert.DeserializeObject<TimeStampedMessage>(s);
                         server.message = message;
 
                         if (message.Type == ResponseType.Connection)
@@ -300,9 +298,7 @@ namespace RCAT
             try
             {
                 Log.Info("Client Connection From : " + (string)RContext.message.Data);
-
-                //onlineUsers.Add(RContext.message.Data);
-                SendAllUsers(RContext);
+                SendAllUsers(RContext, RContext.message.Data);
             }
             catch (Exception e)
             {
@@ -355,11 +351,17 @@ namespace RCAT
         {
             try
             {
+                ServerMessage msg = RContext.message;
                 User user = new User();
                 user = (User)serializer.Deserialize(new JTokenReader(RContext.message.Data), typeof(User));
                 dataConnector.SetPosition(user.Name, user.pos, RContext.message.TimeStamp);
+                user = (User)serializer.Deserialize(new JTokenReader(msg.Data), typeof(User));
+                dataConnector.SetPosition(user.Name, user.pos, msg.TimeStamp);
                 string[] clients = dataConnector.GetAllUsersNames();
                 RContext.Broadcast(user, clients, ResponseType.Position);
+                dynamic data = new { Name = user.Name, Position = user.pos };
+
+                RContext.Broadcast(data, clients, ResponseType.Position);
             }
             catch (Exception e)
             {
@@ -386,13 +388,15 @@ namespace RCAT
         /// <summary>
         /// Informs a user of all the existing clients. 
         /// </summary>
-        private static void SendAllUsers(RCATContext RContext)
+        private static void SendAllUsers(RCATContext RContext, string client)
         {
             try
             {
-                Message r = new Message();
-                r = new Message();
+                ClientMessage r = new ClientMessage();
+                r = new ClientMessage();
                 r.Type = ResponseType.AllUsers;
+                r.clients = new string[1];
+                r.clients[0] = client;
 
                 // Using database
                 User[] arr = dataConnector.GetAllUsers();

@@ -15,7 +15,7 @@ namespace RCAT
         public string[] sb = null;
         public byte[] buffer = new byte[DefaultBufferSize];
         public TcpClient proxyConnection;
-        public TimeStampedMessage message;
+        public ServerMessage message;
         public SemaphoreSlim ReceiveReady = new SemaphoreSlim(1);
         public bool IsTruncated = false;
 
@@ -27,16 +27,12 @@ namespace RCAT
         public void Broadcast(dynamic data, string[] clients, ResponseType type)
         {
 
-            ClientBroadcast cb = new ClientBroadcast();
+            ClientMessage cb = new ClientMessage();
             cb.clients = clients;
-            cb.data = data;
-            cb.type = type;
+            cb.Data = data;
+            cb.Type = type;
 
-            Message r = new Message();
-            r.Type = type;
-            r.Data = cb;
-
-            Send(Newtonsoft.Json.JsonConvert.SerializeObject(r));
+            Send(Newtonsoft.Json.JsonConvert.SerializeObject(cb));
         }
 
         /// <summary>
