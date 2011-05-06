@@ -41,15 +41,8 @@ namespace Proxy
         /// <param name="client"></param>
         public delegate void SendClientConnectToServer(UserContext client);
 
-        /// <summary>
-        /// Forwards a message from server to one specific client.
-        /// </summary>
-        /// <param name="message"></param>
-        public delegate void SendToClient(Message message, string client);
-
         // Clientserver implements this method
         public static BroadcastToClients broadcastToClients;
-        public static SendToClient sendToClient;
 
         // Gameserver implements these methods
         public static SendSetPosToServer sendSetPositionToServer;

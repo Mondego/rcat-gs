@@ -74,14 +74,23 @@
     <Compile Include="Connectors\DataConnector.cs" />
     <Compile Include="Connectors\MemoryConnector.cs" />
     <Compile Include="Connectors\MySqlConnector.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Include="RCATContext.cs" />
+    <Compile Include="Settings.cs" />
     <Compile Include="User.cs" />
     <Compile Include="RCAT.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="ClassDiagram1.cd" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="BengalCat_Stella.ico" />

@@ -49,15 +49,6 @@ namespace RCAT
     class RCAT
     {
         /// <summary>
-        /// Defines a type of command that the client sends to the server
-        /// </summary>
-        public enum CommandType : int
-        {
-            Register = 0,
-            Position
-        }
-
-        /// <summary>
         /// Store the list of online users
         /// </summary>
         //protected static IList<User> OnlineUsers = new List<User>();
@@ -68,7 +59,9 @@ namespace RCAT
 
         public static JsonSerializer serializer = new JsonSerializer();
 
-        protected static int _PROXYPORT = 82; // todo: put this in an external config file
+        protected static int _PROXYPORT = Properties.Settings.Default.proxyport;
+
+        protected static string _PROXYURL = Properties.Settings.Default.proxyurl;
 
         public static TimeSpan TimeOut = new TimeSpan(0, 30, 0);
 
@@ -128,11 +121,8 @@ namespace RCAT
                 //"128.195.4.46", 82
                 Thread.Sleep(2000);
                 proxy = new TcpClient();
-                proxy.BeginConnect("opensim.ics.uci.edu", _PROXYPORT, RunServer, null);
+                proxy.BeginConnect(_PROXYURL, _PROXYPORT, RunServer, null);
                 Log.Info("RCAT Server started!");
-
-                //Listener = new TcpListener(IPAddress.Any, Port);
-                //ThreadPool.QueueUserWorkItem(serverListen, null);
             }
             catch { Log.Error("Game Server failed to start"); }
 

@@ -24,7 +24,7 @@ namespace Proxy
         /// <summary>
         /// This Semaphore limits how many simultaneous handshake events we have active at a time.
         /// </summary>
-        private static int _MAX_SIMULTANEOUS_HANDSHAKE = 5; //todo: put that in config
+        private static int _MAX_SIMULTANEOUS_HANDSHAKE = Properties.Settings.Default.max_simultaneous_handshakes;
         private SemaphoreSlim ConnectReady = new SemaphoreSlim(_MAX_SIMULTANEOUS_HANDSHAKE);
 
         protected int roundrobin = 0;
@@ -33,7 +33,7 @@ namespace Proxy
 
         public static ILog Log;
 
-        protected static int _SERVERLISTENERPORT = 82; //todo: put this in an external  config file
+        protected static int _SERVERLISTENERPORT = Properties.Settings.Default.server_listener_port;
 
         protected void RegisterProxyMethods()
         {
@@ -317,7 +317,7 @@ namespace Proxy
         }
 
         /// <summary>
-        ///  when proxy is stopped
+        ///  Stops the TCP Listener for servers
         /// </summary>
         public void Stop()
         {

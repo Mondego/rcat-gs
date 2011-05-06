@@ -13,7 +13,7 @@ namespace Proxy
     {
         WSServer clientListener = null;
         JsonSerializer serializer = new JsonSerializer();
-        protected static int _CLIENTLISTENERPORT = 81; //TODO: replace this line by a call to external config file
+        protected static int _CLIENTLISTENERPORT = Properties.Settings.Default.client_listener_port;
 
         protected static ILog Log = null;
 
@@ -58,7 +58,6 @@ namespace Proxy
         /// when proxy receives a msg in JSON format from a client, log it, convert it, and forward it to servant layer
         /// </summary>
         /// <param name="AContext"></param>
- 
         public static void OnReceive(UserContext AContext)
         {
             Log.Info("[CLIENT->PROXY]: Received data from : " + AContext.ClientAddress.ToString());
@@ -105,7 +104,7 @@ namespace Proxy
         }
 
         /// <summary>
-        ///when admin decides to stop the proxy 
+        /// Stops the TCP Listener for new clients
         /// </summary>
         public void Stop()
         {
