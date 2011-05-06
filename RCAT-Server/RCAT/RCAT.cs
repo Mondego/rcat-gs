@@ -327,11 +327,11 @@ namespace RCAT
 
                 Message r = new Message();
 
-                if (!String.IsNullOrEmpty(user.Name))
+                if (!String.IsNullOrEmpty(user.n))
                 {
                     string[] clients = dataConnector.GetAllUsersNames();
-                    RContext.Broadcast(user.Name,clients,ResponseType.Disconnect);
-                    dataConnector.RemoveUser(user.Name);
+                    RContext.Broadcast(user.n,clients,ResponseType.Disconnect);
+                    dataConnector.RemoveUser(user.n);
                 }
                 else
                     Log.Warn("ERROR: User not found!");
@@ -351,16 +351,11 @@ namespace RCAT
         {
             try
             {
-                ServerMessage msg = RContext.message;
                 User user = new User();
                 user = (User)serializer.Deserialize(new JTokenReader(RContext.message.Data), typeof(User));
-                dataConnector.SetPosition(user.Name, user.pos, RContext.message.TimeStamp);
-                user = (User)serializer.Deserialize(new JTokenReader(msg.Data), typeof(User));
-                dataConnector.SetPosition(user.Name, user.pos, msg.TimeStamp);
+                dataConnector.SetPosition(user.n, user.p, RContext.message.TimeStamp);
                 string[] clients = dataConnector.GetAllUsersNames();
-                RContext.Broadcast(user, clients, ResponseType.Position);
-                dynamic data = new { Name = user.Name, Position = user.pos };
-
+                dynamic data = new { n = user.n, p = user.p };
                 RContext.Broadcast(data, clients, ResponseType.Position);
             }
             catch (Exception e)

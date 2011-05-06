@@ -47,10 +47,10 @@ namespace Proxy
             Log.Info("[CLIENT->PROXY]: " + AContext.ClientAddress.ToString() + " connected.");
 
             User me = new User();
-            me.Name = AContext.ClientAddress.ToString();
+            me.n = AContext.ClientAddress.ToString();
             me.Context = AContext;
 
-            Proxy.onlineUsers.Add(me.Name, me.Context);
+            Proxy.onlineUsers.Add(me.n, me.Context);
             Proxy.sendClientConnectToServer(AContext);
         }
 
@@ -63,7 +63,7 @@ namespace Proxy
         {
             Log.Info("[CLIENT->PROXY]: Received data from : " + AContext.ClientAddress.ToString());
             User me = new User();
-            me.Name = AContext.ClientAddress.ToString();
+            me.n = AContext.ClientAddress.ToString();
             //me.Context = AContext;
 
             // Object me will be sent to servant layer. Useless to send the whole UserContext, just need name and position
@@ -72,8 +72,8 @@ namespace Proxy
             {
                 string json = AContext.DataFrame.ToString();
                 Position pos = JsonConvert.DeserializeObject<Position>(json);
-                me.pos = pos;
-                Log.Info("[CLIENT->PROXY]: Position received from Client: " + pos.top.ToString() + ":" + pos.left.ToString());
+                me.p = pos;
+                Log.Info("[CLIENT->PROXY]: Position received from Client: " + pos.t.ToString() + ":" + pos.l.ToString());
             }
             catch (Exception e)
             {

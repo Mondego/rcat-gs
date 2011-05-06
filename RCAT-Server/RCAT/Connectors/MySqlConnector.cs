@@ -50,7 +50,7 @@ namespace RCAT
                 // MySQL silently drops insert/update query if no new changes are made to the rows
                 string sql = string.Format("INSERT INTO users (`name`, `top`, `left`,`timestamp`) VALUES ({0}, {1}, {2}, {3}) "+
                 "ON DUPLICATE KEY UPDATE `top`=IF(timestamp < VALUES(timestamp), {1}, `top`)," +
-                "`left`=IF(timestamp < VALUES(timestamp), {2}, `left`),`timestamp`=IF(timestamp < VALUES(timestamp), {3}, `timestamp`)", name, pos.top.ToString(), pos.left.ToString(), newstamp.ToString());
+                "`left`=IF(timestamp < VALUES(timestamp), {2}, `left`),`timestamp`=IF(timestamp < VALUES(timestamp), {3}, `timestamp`)", name, pos.t.ToString(), pos.l.ToString(), newstamp.ToString());
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 
@@ -120,9 +120,9 @@ namespace RCAT
 
                 if (rdr.Read())
                 {
-                    user.Name = userName;
-                    user.pos.top = rdr.GetInt32(1);
-                    user.pos.left = rdr.GetInt32(2);
+                    user.n = userName;
+                    user.p.t = rdr.GetInt32(1);
+                    user.p.l = rdr.GetInt32(2);
                 }
                 rdr.Close();
             }
@@ -184,11 +184,11 @@ namespace RCAT
                 {
                     ulong userName = rdr.GetUInt64(0);
                     allUsers[i] = new User();
-                    allUsers[i].Name = IPulongToString(userName);
+                    allUsers[i].n = IPulongToString(userName);
 
                     //allUsers[i].Name = rdr.GetString(0);
-                    allUsers[i].pos.top = rdr.GetInt32(1);
-                    allUsers[i].pos.left = rdr.GetInt32(2);
+                    allUsers[i].p.t = rdr.GetInt32(1);
+                    allUsers[i].p.l = rdr.GetInt32(2);
                     i++;
                 }
                 rdr.Close();                

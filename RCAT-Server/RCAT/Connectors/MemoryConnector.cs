@@ -19,15 +19,15 @@ namespace RCAT.Connectors
             if (onlineUsers.ContainsKey(userName))
             {
                 User update = onlineUsers[userName];
-                update.pos = pos;
+                update.p = pos;
                 // Do I need this last line? 
                 onlineUsers[userName] = update;
             }
             else
             {
                 User newUser = new User();
-                newUser.pos = pos;
-                newUser.Name = userName;
+                newUser.p = pos;
+                newUser.n = userName;
                 onlineUsers.Add(userName, newUser);
             }
         }
