@@ -239,6 +239,10 @@ namespace Proxy
                         {
                             Proxy.broadcastToClients(message);
                         }
+                        else if (message.Type == ResponseType.Disconnect)
+                        {
+                            Proxy.broadcastToClients(message);
+                        }
                         i++;
                     }
                 }
