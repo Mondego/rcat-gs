@@ -103,12 +103,18 @@ function connect(){
 			log('Received: '+rawmsg.data +' (socket.onmsg)');	
 			var msg = JSON.parse(rawmsg.data);
 			switch(msg.Type) {
+				case 3: // I just logged in and receive everyone else's current position (even if they do not move)
+					var users = msg.Data.Users;
+					for(i = 0 ; i < users.length ; i++ ) {
+						receivePos(users[i].n, users[i].p.t, users[i].p.l);
+					}
+					break;
 				case 2: //received a pos
-					receivePos(msg.Data.Name, msg.Data.Position.top, msg.Data.Position.left);
+					//"Type":2,"Data":{"Name":"128.195.4.125:50215","pos":{"top":500,"left":300}}
+					receivePos(msg.Data.n, msg.Data.p.t, msg.Data.p.l);
 					break;
 				case 1: //someone logged off
-					deleteAvatar(msg.Data.Name);
-					usersTable.remove(msg.Data.Name);
+					userDisconnected(msg.Data);
 					break;
 				default:
 					//log('Error: Unknown msg.Type ('+ userPos.Type +').');
@@ -204,8 +210,8 @@ function receivePos(name, top, left){
 function sendPos(){
 	var avatar = document.getElementById("avatar");
 	var pos = {
-		"top": avatar.offsetTop,
-		"left": avatar.offsetLeft 
+		"t": avatar.offsetTop,
+		"l": avatar.offsetLeft 
 		}; 
 	var txt = JSON.stringify(pos);
 	try{
@@ -216,6 +222,10 @@ function sendPos(){
 	}
 }
 
+function userDisconnected(name) {
+	usersTable.remove(name)
+	deleteAvatar(name);
+}
 
 // ==================== GRAPHICS ========================
 
@@ -223,11 +233,8 @@ function sendPos(){
 // graphically move an avatar
 function moveAvatar(name,top,left) { //el being the div to move
 	var el = document.getElementById(name);
-	var oldTop = el.offsetTop;
-	var oldLeft = el.offsetLeft;
 	el.style.top = top;
 	el.style.left = left;
-	//this could be more sophisticated, eg use jquery to make the div flow from previous offsetTop/Left to new top and left
 }
 
 // graphically create an avatar
@@ -255,9 +262,9 @@ function getRgbFromName(name) {
 	var ip = name.split(":")[0];
 	var ipNums = ip.split(".");
 	//log(port + "--" + ipNums);
-	var r = (port*32)%256;
+	var b = (port*32)%256;
 	var g = ipNums[3];
-	var b = ipNums[2];
+	var r = ipNums[2];
 	return("rgb("+r+","+g+","+b+")");
 }
 
@@ -280,8 +287,8 @@ $('#cancelNPC').bind('click', function(e) {
 });
 
 function runAsNpc() {
-	iMoved(Math.floor(Math.random()*4+1));
-	npcTimer = setTimeout(runAsNpc, 1000);
+	//iMoved(Math.floor(Math.random()*4+1));
+	//npcTimer = setTimeout(runAsNpc, 1000);
 }
 
 connect();

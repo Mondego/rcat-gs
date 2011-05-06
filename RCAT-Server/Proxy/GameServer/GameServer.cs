@@ -233,7 +233,6 @@ namespace Proxy
                         if (message.Type == ResponseType.Position)
                         {
                             Proxy.broadcastToClients(message);
-                            // TODO: Implement SendAllUsers
                         }
                         else if (message.Type == ResponseType.AllUsers)
                         {
@@ -249,7 +248,7 @@ namespace Proxy
             }
             catch (Exception e)
             {
-                Log.Warn("Error parsing JSON in GameServer.HandleRequest. JSON: " + server.sb[i]);
+                Log.Warn("[PROXY->SERVANT]: Error parsing JSON in GameServer.HandleRequest. JSON: " + server.sb[i]);
                 //Log.Error("Error parsing JSON in GameServer.HandleRequest",e);
                 Log.Debug(e);
             }

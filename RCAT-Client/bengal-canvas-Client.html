@@ -1,0 +1,293 @@
+<html>
+<head>
+<style>
+#connectAndLogBoxes {
+	top: 5px;
+	left: 5px;
+	width:700px;
+	position: absolute;
+}
+#chatLog {
+	margin-top: 5px;
+	background-color: #dfd;
+	font-size: small;
+}
+#connectBox {
+}
+#serverUrl {
+	width:300px;
+}
+#playGround {
+	position:absolute;
+	width:600px;
+	height:600px;
+	left:710px;
+	border: 2px solid black;
+}
+</style>
+<script src="http://code.jquery.com/jquery-1.5.js"></script>
+<script src="http://www.ics.uci.edu/~tdebeauv/rCAT/json2.js"></script>
+<script src="http://www.ics.uci.edu/~tdebeauv/rCAT/jshashtable-2.1.js"></script>
+
+</head>
+
+<body>
+
+<div id="connectAndLogBoxes">
+	<div id="connectBox">
+		Server: <input id="serverUrl" value="ws://chateau.ics.uci.edu:81/websocket"/>
+		<button id="connect">Connect</button>
+		<button id="disconnect" style="display:none">Disconnect</button>
+		<button id="cancelNPC">Take Control!</button>
+	</div>
+	<div id="chatLog"></div>
+</div>
+
+
+<canvas id="playGround">
+Here is the playground.
+</canvas>
+
+
+<script type="text/javascript">
+// ====================== CLIENT GAME STATE ==============
+
+var usersTable = new Hashtable(); //will contain users' names and positions, indexed by name
+var fpsTimer; //timer to update frames in the canvas
+var POS_SHIFT_LEFT = 10; // the movement granularity
+var POS_SHIFT_UP = 5;
+var AVATARSIZE = 50;
+var mypos = {top:20, left:20};
+var socket;
+var FPS_DELAY = 20; //1000/20 = 50 fps
+var NPC_DELAY = 10; //delay between 2 actions from the bot in ms
+
+
+// print feedback in log window
+function log(txt){
+	var now = new Date();
+	var mins = now.getMinutes();
+	var secs = now.getSeconds();
+	var msecs = now.getMilliseconds();
+	// add a zero in front of numbers <10
+	mins = mins < 10 ? ("0"+mins) : mins;
+	secs = secs < 10 ? ("0"+secs) : secs;
+	msecs = msecs > 99 ? msecs : (msecs > 9 ? "0"+msecs : "00"+msecs);
+	$('#chatLog').prepend(now.getHours() + ":" + mins + ":" + secs + ":" + msecs + " - " + txt + "<br/>");
+}
+
+
+// ============================ NETWORK =================
+
+if(!("WebSocket" in window)){
+	log("=== no web socket in this browser! ===");
+}
+
+function connect(){
+	var host = $('#serverUrl').val();
+	//var host = "ws://128.195.4.46:81/websocket"; //opensim.ics.uci.edu
+	//var host = "ws://chateau.ics.uci.edu:81/websocket"; 
+	try {
+		socket = new WebSocket(host);
+		log('Socket Status: ' + socket.readyState + ' (socket created)');
+		$('#connect').hide();
+		$('#disconnect').show();
+		socket.onopen = function() {
+			log('Socket Status: ' + socket.readyState + ' (socket.onopen)');
+			npcTimer = setInterval(runAsNpc, NPC_DELAY); //move randomly
+			sendPos();
+			fpsTimer = setInterval(draw, FPS_DELAY);
+		}
+		socket.onmessage = function(rawmsg){
+			//log('Received: '+rawmsg.data +' (socket.onmsg)');	
+			log('Received: ' + rawmsg.data);	
+			var msg = JSON.parse(rawmsg.data);
+			switch(msg.Type) {
+			case 1: //someone logged off
+				userDisconnected(msg.Data);
+				break;
+			case 2: //received a pos
+				receivePos(msg.Data.n, msg.Data.p.t, msg.Data.p.l);
+				break;
+			case 3: // I just logged in and receive everyone else's current position 
+				var users = msg.Data.Users;
+				for(i = 0 ; i < users.length ; i++ ) {
+					receivePos(users[i].n, users[i].p.t, users[i].p.l);
+				}
+				break;
+			default:
+				//log('Error: Unknown msg.Type ('+ userPos.Type +').');
+				break;
+			}
+		}
+		socket.onclose = function(){
+			removeAllUsers();
+			log('Socket Status: '+socket.readyState+' (socket.onclose)');
+		}
+	} catch(exception) {
+		log('Exception in connect: '+exception);
+	}
+
+	document.onkeypress = function (e) {
+		var keyCode = e.keyCode ? e.keyCode : e.charCode; //firefox (charcode) vs others (keycode)
+		//alert(keyCode);
+		switch(keyCode) {
+		case 37: //arrowleft
+		case 97: //a
+			iMoved(1);
+			break;
+		case 119: //w
+		case 38: //arrowup
+			iMoved(2);
+			break;
+		case 39: //arrowright
+		case 100: //d
+			iMoved(3);
+			break;
+		case 40: //arrowdown
+		case 115: //s
+			iMoved(4);
+			break;
+		default:
+			break;
+		}
+	}
+	
+}
+
+// when i move, update my avatar graphics and send my position
+function iMoved(dir) {
+	switch(dir) {
+	case 1: //left
+		mypos.left -= POS_SHIFT_LEFT;
+		break;
+	case 3: //right
+		mypos.left += POS_SHIFT_LEFT;
+		break;
+	case 2: //up
+		mypos.top -= POS_SHIFT_UP;
+		break;
+	case 4: //down
+		mypos.top += POS_SHIFT_UP;
+		break;
+	}
+	sendPos();
+}
+
+// when I logout, remove all users and close connection
+function disconnect() {
+	removeAllUsers();
+	socket.close();
+	log('Connection closed. Socket Status: ' + socket.readyState);
+	$('#disconnect').hide();
+	$('#connect').show();
+	document.onkeypress = null;
+}
+
+// when I receive a position from the server
+function receivePos(name, top, left){
+	if(usersTable.containsKey(name)) { //user was already displayed
+		usersTable.get(name).top = top;
+		usersTable.get(name).left = left;
+	}
+	else { //new user to draw
+		var userCoords = {"top":top, "left":left}; //JSON storage
+		usersTable.put(name, userCoords);
+	}
+}
+
+
+// send my position to the server
+function sendPos(){
+	var p = {
+		"t": mypos.top,
+		"l": mypos.left 
+		}; 
+	var txt = JSON.stringify(p);
+	try{
+		socket.send(txt);
+		log('Sent: '+txt)
+	} catch(exception){
+		log('Exception in sendPos: '+exception);
+	}
+}
+
+
+//when another user disconnects, remove him from the screen and my user list
+function userDisconnected(name) {
+	usersTable.remove(name)
+}
+
+
+// remove any user's avatar that could have sneaked in between close() (state 2) and onclose (state 3)
+function removeAllUsers() {
+	usersTable.clear();
+}
+
+// ==================== GRAPHICS ========================
+
+
+// just a trick to generate colors from a string of IP:port
+function getColorFromIpPort(ipPort) {
+	var port = ipPort.split(":")[1];
+	var ip = ipPort.split(":")[0];
+	var ipNums = ip.split(".");
+	//log(port + "--" + ipNums);
+	var b = (port*32)%256;
+	var g = ipNums[3];
+	var r = ipNums[2];
+	return("rgb("+r+","+g+","+b+")");
+}
+
+// draw is called every frame (ie 60 times per sec)
+function draw() {
+	var ctx = document.getElementById('playGround').getContext('2d');
+	ctx.clearRect(0,0,600,600); //clean screen
+	//ctx.fillStyle = 'rgb(0,0,0)';
+	//ctx.strokeStyle = 'rgb(255,255,255)';
+	var userNames = usersTable.keys();
+	for (i = 0 ; i < userNames.length ; i++ ) {
+		userName = userNames[i];
+		userPos = usersTable.get(userName);
+		ctx.fillStyle = getColorFromIpPort(userName);
+		ctx.fillRect(userPos.left, userPos.top, POS_SHIFT_LEFT*1.5, POS_SHIFT_UP*1.5);
+	}
+}
+
+
+// ------------------------ BINDERS ----------------
+
+$('#disconnect').bind('click', function(e) {
+	//e.preventDefault();
+	disconnect();
+});
+
+$('#connect').bind('click', function(e) {
+	//e.preventDefault();
+	connect();
+});
+
+
+$('#cancelNPC').bind('click', function(e) {
+	clearTimeout(npcTimer);
+	$('#cancelNPC').hide();
+});
+
+
+function runAsNpc() {
+	var randomMove = Math.floor(Math.random()*4+1);
+	if(mypos.top <= 0)
+		randomMove = 4;
+	else if(mypos.left <= 0)
+		randomMove = 3;
+	else if (mypos.left >= 28*POS_SHIFT_LEFT)
+		randomMove = 1;
+	else if (mypos.top >= 28*POS_SHIFT_UP)
+		randomMove = 2;		
+	iMoved(randomMove);
+}
+
+connect();
+</script>
+</body>
+</html>
