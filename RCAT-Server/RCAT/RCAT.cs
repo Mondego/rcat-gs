@@ -207,8 +207,13 @@ namespace RCAT
                             // Append last element in RContext.sb to first element of tmp array
                             list[RContext.sb.Length - 1] = list[RContext.sb.Length - 1] + tmp[0];
                             // Exclude the first element of tmp, and add it to the list
-                            var segment = new ArraySegment<string>(tmp,1,tmp.Length -1);
-                            list.AddRange(segment.Array);
+                            //var segment = new ArraySegment<string>(tmp,1,tmp.Length -1);
+                            //list.AddRange(segment.Array);
+                            for (int i = 1; i < tmp.Length; i++)
+                            {
+                                list.Add(tmp[i]);
+                            }
+                            
                             
                             RContext.sb = list.ToArray();
                             Log.Info("[RCAT]: Appended truncated message.");
