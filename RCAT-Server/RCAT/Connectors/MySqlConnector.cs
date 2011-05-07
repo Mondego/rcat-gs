@@ -13,7 +13,6 @@ namespace RCAT
     {
 
         public String connStr = "server="+Properties.Settings.Default.mysql_server+";user="+Properties.Settings.Default.mysql_user+";database="+Properties.Settings.Default.mysql_database+";port="+Properties.Settings.Default.mysql_port+";password="+Properties.Settings.Default.mysql_pass+";";
-        //public override MySqlConnection conn;
         
         public override void Connect()
         {

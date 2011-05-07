@@ -295,8 +295,8 @@ namespace Proxy
         protected ServerContext PickServer()
         {
             ServerContext server =  onlineServers[roundrobin];
-            roundrobin++;
-            if (roundrobin == onlineServers.Count)
+            Interlocked.Increment(ref roundrobin);
+            if (roundrobin >= onlineServers.Count)
                 roundrobin = 0;
             return server;
         }

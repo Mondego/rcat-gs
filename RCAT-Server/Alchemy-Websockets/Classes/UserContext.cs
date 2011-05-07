@@ -46,6 +46,10 @@ namespace Alchemy.Server.Classes
         /// </summary>
         public DataFrame DataFrame = new DataFrame();
         /// <summary>
+        /// Timestamp of last message sent. 
+        /// </summary>
+        public long LastUpdate = 0;
+        /// <summary>
         /// What character encoding to use.
         /// </summary>
         public UTF8Encoding Encoding = new UTF8Encoding();

@@ -41,7 +41,7 @@ namespace RCAT
     /// <summary>
     /// Structure for sending broadcast information from Server to Clients. Contains the data to be sent and an array of clients that should receive it.
     /// </summary>
-    public class ClientMessage : Message
+    public class ClientMessage : ServerMessage
     {
         public string[] clients;
     }
@@ -202,8 +202,6 @@ namespace RCAT
                         else
                         {
                             string[] tmp = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
-                            
-
                             var list = new List<string>();
                             list.AddRange(RContext.sb);
                             // Append last element in RContext.sb to first element of tmp array
@@ -320,7 +318,7 @@ namespace RCAT
                 if (!String.IsNullOrEmpty(user.n))
                 {
                     string[] clients = dataConnector.GetAllUsersNames();
-                    RContext.Broadcast(user.n,clients,ResponseType.Disconnect);
+                    RContext.Broadcast(user.n,clients,ResponseType.Disconnect, RContext.message.TimeStamp);
                     dataConnector.RemoveUser(user.n);
                 }
                 else
@@ -346,7 +344,7 @@ namespace RCAT
                 dataConnector.SetPosition(user.n, user.p, RContext.message.TimeStamp);
                 string[] clients = dataConnector.GetAllUsersNames();
                 dynamic data = new { n = user.n, p = user.p };
-                RContext.Broadcast(data, clients, ResponseType.Position);
+                RContext.Broadcast(data, clients, ResponseType.Position, RContext.message.TimeStamp);
             }
             catch (Exception e)
             {

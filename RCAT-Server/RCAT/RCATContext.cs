@@ -24,13 +24,14 @@ namespace RCAT
             Send(UTF8Encoding.UTF8.GetBytes(Data + '\0'));
         }
 
-        public void Broadcast(dynamic data, string[] clients, ResponseType type)
+        public void Broadcast(dynamic data, string[] clients, ResponseType type, long timestamp)
         {
 
             ClientMessage cb = new ClientMessage();
             cb.clients = clients;
             cb.Data = data;
             cb.Type = type;
+            cb.TimeStamp = timestamp;
 
             Send(Newtonsoft.Json.JsonConvert.SerializeObject(cb));
         }

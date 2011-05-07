@@ -123,14 +123,17 @@ namespace Proxy
                 try
                 {
                     UserContext cl = Proxy.onlineUsers[client];
-                    Message m = new Message();
-                    m.Type = broadcast.Type;
-                    m.Data = broadcast.Data;
+                    if (broadcast.TimeStamp > cl.LastUpdate)
+                    {
+                        Message m = new Message();
+                        m.Type = broadcast.Type;
+                        m.Data = broadcast.Data;
+                        cl.LastUpdate = broadcast.TimeStamp;
 
-                    //broadcast.Data = new { Name = (string)broadcast.data["Name"], Position = new Position((int)broadcast.data["pos"]["top"], (int)broadcast.data["pos"]["left"]) };
-                    string json = JsonConvert.SerializeObject(m);
+                        string json = JsonConvert.SerializeObject(m);
 
-                    cl.Send(json);
+                        cl.Send(json);
+                    }
                 }
                 catch (Exception e)
                 {
