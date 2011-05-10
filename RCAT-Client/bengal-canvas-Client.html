@@ -54,13 +54,14 @@ Here is the playground.
 
 var usersTable = new Hashtable(); //will contain users' names and positions, indexed by name
 var fpsTimer; //timer to update frames in the canvas
+var npcTimer;
 var POS_SHIFT_LEFT = 10; // the movement granularity
 var POS_SHIFT_UP = 5;
 var AVATARSIZE = 50;
-var mypos = {top:20, left:20};
+var mypos = {top:20, left:20, z:1337};
 var socket;
 var FPS_DELAY = 20; //1000/20 = 50 fps
-var NPC_DELAY = 10; //delay between 2 actions from the bot in ms
+var NPC_DELAY = 50; //delay between 2 actions from the bot in ms
 
 
 // print feedback in log window
@@ -176,6 +177,7 @@ function iMoved(dir) {
 
 // when I logout, remove all users and close connection
 function disconnect() {
+	clearInterval(npcTimer);
 	removeAllUsers();
 	socket.close();
 	log('Connection closed. Socket Status: ' + socket.readyState);
@@ -201,7 +203,8 @@ function receivePos(name, top, left){
 function sendPos(){
 	var p = {
 		"t": mypos.top,
-		"l": mypos.left 
+		"l": mypos.left, 
+		"z": mypos.z
 		}; 
 	var txt = JSON.stringify(p);
 	try{
@@ -252,6 +255,9 @@ function draw() {
 		ctx.fillStyle = getColorFromIpPort(userName);
 		ctx.fillRect(userPos.left, userPos.top, POS_SHIFT_LEFT*1.5, POS_SHIFT_UP*1.5);
 	}
+	// these 2 lines display user's local position. They have to be _after_ everything else has been drawn.
+	ctx.fillStyle = "black";
+	ctx.fillRect(mypos.left, mypos.top, POS_SHIFT_LEFT*0.5, POS_SHIFT_UP*0.5);
 }
 
 
@@ -269,7 +275,7 @@ $('#connect').bind('click', function(e) {
 
 
 $('#cancelNPC').bind('click', function(e) {
-	clearTimeout(npcTimer);
+	clearInterval(npcTimer);
 	$('#cancelNPC').hide();
 });
 
