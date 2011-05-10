@@ -27,7 +27,7 @@ namespace Proxy
         private static int _MAX_SIMULTANEOUS_HANDSHAKE = Properties.Settings.Default.max_simultaneous_handshakes;
         private SemaphoreSlim ConnectReady = new SemaphoreSlim(_MAX_SIMULTANEOUS_HANDSHAKE);
 
-        protected int roundrobin = 0;
+        protected int roundrobin = -1;
 
         protected JsonSerializer serializer = new JsonSerializer();
 
@@ -115,6 +115,10 @@ namespace Proxy
                     onlineServers.Add(SContext);
                     try
                     {
+                        if (roundrobin == -1)
+                        {
+                            roundrobin = 0;
+                        }
                         // When something has arrived in the TCP pipe, process it
                         while (SContext.serverConnection.Connected)
                         {
@@ -178,8 +182,13 @@ namespace Proxy
                         // Append last element in RContext.sb to first element of tmp array (concat the beginning and the end of the packet in the middle of the truncation)
                         msgStrList[SContext.sb.Length - 1] = msgStrList[SContext.sb.Length - 1] + tmp[0];
                         // Exclude the first element of tmp, and add it to the list
-                        var segment = new ArraySegment<string>(tmp, 1, tmp.Length - 1);
-                        msgStrList.AddRange(segment.Array);
+                        //var segment = new ArraySegment<string>(tmp, 1, tmp.Length - 1);
+                        //msgStrList.AddRange(segment.Array);
+
+                        for (int i = 1; i < tmp.Length; i++)
+                        {
+                            msgStrList.Add(tmp[i]);
+                        }
 
                         SContext.sb = msgStrList.ToArray();
                         Log.Info("[PROXY->SERVANT]: Appended truncated message.");
@@ -220,12 +229,9 @@ namespace Proxy
         protected void HandleRequest(ServerContext server)
         {
             int i = 0;
-            //Newtonsoft.Json.Linq.JObject test = new Newtonsoft.Json.Linq.JObject();
-            //test.Value<ClientBroadcast>(test)
-             //   User Value<User>(message.Data)
-            try
+            foreach (string s in server.sb)
             {
-                foreach (string s in server.sb)
+                try
                 {
                     if (s != "")
                     {
@@ -245,12 +251,12 @@ namespace Proxy
                         i++;
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                Log.Warn("[PROXY->SERVANT]: Error parsing JSON in GameServer.HandleRequest. JSON: " + server.sb[i]);
-                //Log.Error("Error parsing JSON in GameServer.HandleRequest",e);
-                Log.Debug(e);
+                catch (Exception e)
+                {
+                    Log.Warn("[PROXY->SERVANT]: Error parsing JSON in GameServer.HandleRequest. JSON: " + server.sb[i]);
+                    //Log.Error("Error parsing JSON in GameServer.HandleRequest",e);
+                    Log.Debug(e);
+                }
             }
         }
 

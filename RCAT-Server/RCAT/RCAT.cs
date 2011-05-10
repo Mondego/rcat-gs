@@ -253,9 +253,9 @@ namespace RCAT
         protected static void HandleRequest(RCATContext server)
         {
             int i = 0;
-            try
+            foreach (string s in server.sb)
             {
-                foreach (string s in server.sb)
+                try
                 {
                     if (s != "")
                     {
@@ -273,11 +273,11 @@ namespace RCAT
                         i++;
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                Log.Warn("Error parsing JSON in RCAT.HandleRequest. JSON message was: " + server.sb[i]);
-                Log.Debug(e);
+                catch (Exception e)
+                {
+                    Log.Warn("Error parsing JSON in RCAT.HandleRequest. JSON message was: " + server.sb[i]);
+                    Log.Debug(e);
+                }
             }
         }
 
