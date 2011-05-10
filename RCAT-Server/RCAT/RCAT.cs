@@ -119,7 +119,7 @@ namespace RCAT
                 LogConfigFile = "RCAT.config";
                 LoggerName = "RCAT.Log";
                 //"128.195.4.46", 82
-                Thread.Sleep(2000);
+                Thread.Sleep(1000);
                 proxy = new TcpClient();
                 proxy.BeginConnect(_PROXYURL, _PROXYPORT, RunServer, null);
                 Log.Info("RCAT Server started!");

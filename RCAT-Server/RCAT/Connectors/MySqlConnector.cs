@@ -47,9 +47,9 @@ namespace RCAT
                 conn.Open();
                 ulong name = IPStringToulong(userName);
                 // MySQL silently drops insert/update query if no new changes are made to the rows
-                string sql = string.Format("INSERT INTO users (`name`, `top`, `left`,`timestamp`) VALUES ({0}, {1}, {2}, {3}) "+
+                string sql = string.Format("INSERT INTO users (`name`, `top`, `left`,`timestamp`,`z`) VALUES ({0}, {1}, {2}, {3}, {4}) "+
                 "ON DUPLICATE KEY UPDATE `top`=IF(timestamp < VALUES(timestamp), {1}, `top`)," +
-                "`left`=IF(timestamp < VALUES(timestamp), {2}, `left`),`timestamp`=IF(timestamp < VALUES(timestamp), {3}, `timestamp`)", name, pos.t.ToString(), pos.l.ToString(), newstamp.ToString());
+                "`left`=IF(timestamp < VALUES(timestamp), {2}, `left`),`timestamp`=IF(timestamp < VALUES(timestamp), {3},`timestamp`),`z`=IF(timestamp < VALUES(timestamp), {4}, `z`)", name, pos.t.ToString(), pos.l.ToString(), newstamp.ToString(), pos.z.ToString());
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 
@@ -175,7 +175,7 @@ namespace RCAT
                 int i = 0;
                 allUsers = new User[count];
 
-                string sql = "SELECT `name`,`top`,`left` FROM users";
+                string sql = "SELECT `name`,`top`,`left`,`z` FROM users";
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 MySqlDataReader rdr = cmd.ExecuteReader();
 
@@ -188,6 +188,7 @@ namespace RCAT
                     //allUsers[i].Name = rdr.GetString(0);
                     allUsers[i].p.t = rdr.GetInt32(1);
                     allUsers[i].p.l = rdr.GetInt32(2);
+                    allUsers[i].p.z = rdr.GetInt32(3);
                     i++;
                 }
                 rdr.Close();                

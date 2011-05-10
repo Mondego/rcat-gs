@@ -27,7 +27,7 @@ namespace Proxy
         private static int _MAX_SIMULTANEOUS_HANDSHAKE = Properties.Settings.Default.max_simultaneous_handshakes;
         private SemaphoreSlim ConnectReady = new SemaphoreSlim(_MAX_SIMULTANEOUS_HANDSHAKE);
 
-        protected int roundrobin = -1;
+        protected int roundrobin = 0;
 
         protected JsonSerializer serializer = new JsonSerializer();
 
@@ -115,10 +115,6 @@ namespace Proxy
                     onlineServers.Add(SContext);
                     try
                     {
-                        if (roundrobin == -1)
-                        {
-                            roundrobin = 0;
-                        }
                         // When something has arrived in the TCP pipe, process it
                         while (SContext.serverConnection.Connected)
                         {

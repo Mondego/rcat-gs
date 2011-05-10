@@ -15,18 +15,20 @@ namespace RCAT
 
     public struct Position
     {
-        public int t, l;
+        public int t, l, z;
 
-        public Position(int p1, int p2)
+        public Position(int p1, int p2, int p3)
         {
             t = p1;
             l = p2;
+            z = p3;
         }
 
-        public Position(String p1, String p2)
+        public Position(String p1, String p2, String p3)
         {
             t = int.Parse(p1);
             l = int.Parse(p2);
+            z = int.Parse(p3);
         }
     }
 
@@ -39,7 +41,7 @@ namespace RCAT
         public UserContext Context = null;
 
         [JsonProperty]
-        public Position p = new Position(0,0);
+        public Position p = new Position(0,0,0);
 
     }
 }

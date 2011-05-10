@@ -72,7 +72,7 @@ namespace Proxy
                 string json = AContext.DataFrame.ToString();
                 Position pos = JsonConvert.DeserializeObject<Position>(json);
                 me.p = pos;
-                Log.Info("[CLIENT->PROXY]: Position received from Client: " + pos.t.ToString() + ":" + pos.l.ToString());
+                Log.Info("[CLIENT->PROXY]: Position received from Client: " + pos.t.ToString() + ":" + pos.l.ToString() + ":" + pos.z.ToString());
             }
             catch (Exception e)
             {
