@@ -268,7 +268,7 @@ namespace Proxy
             resp.Data = client;
             resp.TimeStamp = DateTime.Now.Ticks;
 
-            Log.Info("Sending Client info: " + resp.Data.ToString());
+            Log.Info("[PROXY->SERVANT]: Sending Client info: " + resp.Data.ToString());
             
             server.Send(Newtonsoft.Json.JsonConvert.SerializeObject(resp) + '\0');
         }
