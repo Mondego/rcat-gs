@@ -15,8 +15,11 @@ class Bot extends WebSocketClient {
 	int top;
 	int left;
 	Random r;
-	static int MAXTOP = 400;
-	static int MAXLEFT = 400;
+	static int TOP_SHIFT = 1;
+	static int LEFT_SHIFT = 2; // these 2 values depend on the screen to look at them. In our case, canvas in browser 
+	static int MAXTOP = 140;
+	static int MAXLEFT = 290;
+	long millisOrigin = 0; //time origin for the experiments
 
 	public Bot() throws URISyntaxException {
 		this(new URI("ws://chateau.ics.uci.edu:81/websocket"), 1, 1000);
@@ -43,6 +46,14 @@ class Bot extends WebSocketClient {
 	 * @param time
 	 */
 	public void waitThenMove() {
+		try {
+			botPrint("Sleeping for " + this.freq + " ms");
+			Thread.sleep(this.freq);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		/*
 		synchronized(this) {
 			try {
 				wait(this.freq);
@@ -51,36 +62,39 @@ class Bot extends WebSocketClient {
 				e.printStackTrace();
 			}
 		}
+		*/
 		// change position and send new one to server
 		try {
 			int posToGoTo = r.nextInt(4);
 			// just checking that bot stays within visual range of screen 
-			if(this.top == 0)
+			if(this.top <= 0)
 				posToGoTo = 1;
-			if(this.top == MAXTOP)
+			if(this.top >= MAXTOP)
 				posToGoTo = 0;
-			if(this.left == 0)
+			if(this.left <= 0)
 				posToGoTo = 2;
-			if(this.left == MAXLEFT)
+			if(this.left >= MAXLEFT)
 				posToGoTo = 3;	
 			// actually move
 			switch(posToGoTo) {
 			case 0: //up
-				this.top = this.top - 20;
+				this.top = this.top - TOP_SHIFT;
 				break;
 			case 1: //down
-				this.top = this.top + 20;
+				this.top = this.top + TOP_SHIFT;
 				break;
 			case 2: //right
-				this.left = this.left + 20;
+				this.left = this.left + LEFT_SHIFT;
 				break;
 			case 3: //left
-				this.left = this.left - 20;
+				this.left = this.left - LEFT_SHIFT;
 				break;
 			default:
-				System.out.println("Error in switch-case of move()");
+				botPrint("Error in switch-case of move()");
 			}
-			send("{\"top\":" + this.top + ",\"left\":" + this.left + "}");
+			String s = "{\"t\":" + this.top + ",\"l\":" + this.left + ",\"z\":" + 666 + "}"; // 666 is just a dummy number, we dont use z for now
+			send(s); 
+			botPrint("Sent " + s);
 			//} catch (ClosedChannelException e) {
 			//	connect();
 		} catch (IOException e) {
@@ -95,16 +109,16 @@ class Bot extends WebSocketClient {
 	 */
 	@Override
 	public void onOpen() {
-		System.out.println("Connected to: " + getURI());
+		botPrint("Socket opened to: " + getURI());
 		startSendingPos();
 	}
 	@Override
 	public void onMessage(String message) {
-		System.out.println(System.currentTimeMillis() + ": " + message);
+		botPrint("Received: " + message);
 	}
 	@Override
 	public void onClose() {
-		System.out.println("Disconnected from: " + getURI());	
+		botPrint("Socket closed from: " + getURI());	
 	}
 
 	/**
@@ -112,13 +126,19 @@ class Bot extends WebSocketClient {
 	 */
 	public void startSendingPos() {
 		long tid = Thread.currentThread().getId();
-		System.out.println("rng seed = " + tid);
+		botPrint("RNG seed = " + tid);
 		r = new Random(tid);
 		this.top = r.nextInt(20) * 20;
 		this.left = r.nextInt(20) * 20;
 		while(counter > 0) {
 			counter --;
 			waitThenMove();
+		}
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
 		try {
 			close();
@@ -128,12 +148,16 @@ class Bot extends WebSocketClient {
 		}
 	}
 
+	public void botPrint(String msg) {
+		long tid = Thread.currentThread().getId();
+		System.out.println((System.currentTimeMillis() - this.millisOrigin) + " \t Thread#" + tid + " \t " + msg);
+	}
 	/**
 	 * create a bot that connects to the server
 	 */
 	public void create() {
-		long tid = Thread.currentThread().getId();
-		System.out.println("Running a bot in thread#" + tid);
+		this.millisOrigin = System.currentTimeMillis();
+		botPrint("Bot created");
 		connect();
 	} 
 

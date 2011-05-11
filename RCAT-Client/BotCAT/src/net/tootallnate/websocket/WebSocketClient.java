@@ -124,7 +124,6 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 	 * @throws IOException When socket related I/O errors occur.
 	 */
 	public void send(String text) throws IOException {
-		System.out.println("Thread#" + Thread.currentThread().getId() + " sent: " + text);
 		conn.send(text);
 	}
 
@@ -145,7 +144,7 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 			selector = Selector.open();
 
 			this.conn = new WebSocket(client, new LinkedBlockingQueue<ByteBuffer>(), this);
-			System.out.println("socket created");
+			//System.out.println("socket created");
 			// At first, we're only interested in the 'CONNECT' keys.
 			client.register(selector, SelectionKey.OP_CONNECT);
 
