@@ -101,7 +101,7 @@ namespace Proxy
             ClientServer cServer = new ClientServer(Log); // handles communication with clients through websocket protocol
             GameServer gServer = new GameServer(Log); //handles communication with servants through TCP
             Console.WriteLine("Proxy up and running. Type 'exit' to terminate it.");
-            LogConfigFile = "Log.config";
+            LogConfigFile = "Proxy.config";
             LoggerName = "Proxy.Log";
 
             string Command = string.Empty;
