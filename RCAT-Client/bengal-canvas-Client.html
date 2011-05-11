@@ -19,8 +19,8 @@
 }
 #playGround {
 	position:absolute;
-	width:600px;
-	height:600px;
+	width:1000px;
+	height:800px;
 	left:710px;
 	border: 2px solid black;
 }
@@ -55,13 +55,15 @@ Here is the playground.
 var usersTable = new Hashtable(); //will contain users' names and positions, indexed by name
 var fpsTimer; //timer to update frames in the canvas
 var npcTimer;
-var POS_SHIFT_LEFT = 10; // the movement granularity
-var POS_SHIFT_UP = 5;
-var AVATARSIZE = 50;
-var mypos = {top:20, left:20, z:1337};
+var AVATARSIZE = 40;
+var POS_SHIFT_LEFT = AVATARSIZE/20; // the movement granularity
+var POS_SHIFT_UP = AVATARSIZE/40;
+var MAXTOP = 150;
+var MAXLEFT = 300;
+var mypos = {top:20, left:Math.floor(Math.random()*MAXLEFT), z:1337};
 var socket;
 var FPS_DELAY = 20; //1000/20 = 50 fps
-var NPC_DELAY = 50; //delay between 2 actions from the bot in ms
+var NPC_DELAY = 10; //delay between 2 actions from the bot in ms
 
 
 // print feedback in log window
@@ -101,7 +103,7 @@ function connect(){
 		}
 		socket.onmessage = function(rawmsg){
 			//log('Received: '+rawmsg.data +' (socket.onmsg)');	
-			log('Received: ' + rawmsg.data);	
+			log('Received: ' + rawmsg.data);
 			var msg = JSON.parse(rawmsg.data);
 			switch(msg.Type) {
 			case 1: //someone logged off
@@ -279,18 +281,27 @@ $('#cancelNPC').bind('click', function(e) {
 	$('#cancelNPC').hide();
 });
 
-
+var direction = 4;
 function runAsNpc() {
+	if(mypos.top - POS_SHIFT_UP <= 0)
+		direction = 4;
+	if(mypos.top >= MAXTOP - POS_SHIFT_UP)
+		direction = 2;
+	iMoved(direction);
+	
+/*
 	var randomMove = Math.floor(Math.random()*4+1);
 	if(mypos.top <= 0)
 		randomMove = 4;
 	else if(mypos.left <= 0)
 		randomMove = 3;
-	else if (mypos.left >= 28*POS_SHIFT_LEFT)
+	else if (mypos.left >= MAXLEFT)
 		randomMove = 1;
-	else if (mypos.top >= 28*POS_SHIFT_UP)
-		randomMove = 2;		
+	else if (mypos.top >= MAXTOP)
+		randomMove = 2;
 	iMoved(randomMove);
+*/		
+	
 }
 
 connect();
