@@ -123,7 +123,7 @@ namespace Proxy
                 try
                 {
                     UserContext cl = Proxy.onlineUsers[client];
-                    if (broadcast.TimeStamp > cl.LastUpdate)
+                    if (broadcast.Type != ResponseType.Position || broadcast.TimeStamp >= cl.LastUpdate)
                     {
                         Message m = new Message();
                         m.Type = broadcast.Type;
