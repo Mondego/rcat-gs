@@ -76,7 +76,7 @@ namespace Proxy
             }
             catch (Exception e)
             {
-                Log.Error("[CLIENT->PROXY]: Error parsing Json into a position in ClientServer.OnReceive: ", e);
+                Log.Warn("[CLIENT->PROXY]: Error parsing Json into a position in ClientServer.OnReceive, JSON message was: " + AContext.DataFrame.ToString());
             }
             Proxy.sendSetPositionToServer(me); // so far, the messages received only deal with user position updates
 

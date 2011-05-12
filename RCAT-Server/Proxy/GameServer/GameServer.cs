@@ -181,11 +181,11 @@ namespace Proxy
                         //var segment = new ArraySegment<string>(tmp, 1, tmp.Length - 1);
                         //msgStrList.AddRange(segment.Array);
 
-                        for (int i = 1; i < tmp.Length; i++)
-                        {
-                            msgStrList.Add(tmp[i]);
-                        }
+                        string[] newlist = new string[tmp.Length - 1];
+                        Array.Copy(tmp, 1, newlist, 0, tmp.Length - 1);
 
+                        msgStrList.AddRange(newlist);
+                        
                         SContext.sb = msgStrList.ToArray();
                         Log.Info("[PROXY->SERVANT]: Appended truncated message.");
 
