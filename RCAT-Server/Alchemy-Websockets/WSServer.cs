@@ -298,7 +298,7 @@ namespace Alchemy.Server
                 if (Listener != null)
                     AConnection = Listener.EndAcceptTcpClient(AResult);
             }
-            catch (Exception e) { Log.Error("Connect Failed", e); }
+            catch (Exception) { Log.Error("[WS_SERVER]: Connection to client failed."); }
 
             ConnectReady.Release();
             if(AConnection != null)
@@ -334,7 +334,9 @@ namespace Alchemy.Server
                             }
                         }
                     }
-                    catch (Exception e) { Log.Info("Client Forcefully Disconnected", e); }
+                    catch {
+                        Log.Info("[WS_SERVER]: Client disconnected 1."); 
+                    }
                 }
 
                 ClientLock.Wait();
@@ -350,7 +352,7 @@ namespace Alchemy.Server
         private void DoReceive(IAsyncResult AResult)
         {
             Context AContext = (Context)AResult.AsyncState;
-            int received = 0;
+            int received = 0; //number of bytes received
 
             AContext.Reset();
             try
@@ -358,14 +360,16 @@ namespace Alchemy.Server
                 received = AContext.Connection.Client.EndReceive(AResult);
                 AContext.ReceivedByteCount = received;
             }
-            catch (Exception e) { Log.Info("Client Forcefully Disconnected", e); }
+            catch  {
+                Log.Info("[WS_SERVER]: Client disconnected 2."); 
+            }
 
-            // The HTTP Upgrade packet must not be bigger then BufferSize (4096)
+            // The HTTP Upgrade packet must not be bigger than BufferSize (4096)
             if (received > 0)
             {
-                if (received == DefaultBufferSize && !AContext.IsSetup)
+                if (received >= DefaultBufferSize && !AContext.IsSetup)
                 {
-                    Log.Error("[WS_SERVER]: HTTP Connect packet reached maximum size. Are we missing data?");
+                    Log.Error("[WS_SERVER]: HTTP packet bigger than buffer size (" + DefaultBufferSize + "): " + AContext.Buffer.ToString());
                     return;
                 }
                 AContext.Handler.HandleRequest(AContext);

@@ -175,7 +175,7 @@ namespace RCAT
         private static void DoReceive(IAsyncResult AResult)
         {
             RCATContext RContext = (RCATContext)AResult.AsyncState;
-            int received = 0;
+            int received = 0; //number of bytes received
 
             try
             {
@@ -195,7 +195,7 @@ namespace RCAT
                         if (RContext.IsTruncated == false)
                         {
                             // Last message was not truncated
-                            RContext.sb = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+                            RContext.receivedMessages = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
                             RContext.IsTruncated = true;
                             RContext.proxyConnection.Client.BeginReceive(RContext.buffer, 0, RCATContext.DefaultBufferSize, SocketFlags.None, new AsyncCallback(DoReceive), RContext);
                         }
@@ -203,17 +203,17 @@ namespace RCAT
                         {
                             string[] tmp = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
                             var list = new List<string>();
-                            list.AddRange(RContext.sb);
+                            list.AddRange(RContext.receivedMessages);
                             // Append last element in RContext.sb to first element of tmp array
-                            list[RContext.sb.Length - 1] = list[RContext.sb.Length - 1] + tmp[0];
+                            list[RContext.receivedMessages.Length - 1] = list[RContext.receivedMessages.Length - 1] + tmp[0];
                             // Exclude the first element of tmp, and add it to the list
                             string[] newlist = new string[tmp.Length - 1];
                             Array.Copy(tmp, 1, newlist, 0, tmp.Length - 1);
 
                             list.AddRange(newlist);
 
-                            RContext.sb = list.ToArray();
-                            Log.Info("[RCAT]: Appended truncated message.");
+                            RContext.receivedMessages = list.ToArray();
+                            Log.Info("[PROXY->SERVANT]: Appended truncated message.");
 
                             if (values.EndsWith("\0"))
                             {
@@ -229,7 +229,7 @@ namespace RCAT
                     }
                     else
                     {
-                        RContext.sb = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+                        RContext.receivedMessages = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
                         HandleRequest(RContext);
                         RContext.ReceiveReady.Release();
                     }
@@ -242,38 +242,40 @@ namespace RCAT
             }
             catch (Exception e)
             {
-                Log.Error("Error in DoReceive: ", e);
+                Log.Error("[PROXY->SERVANT]: Error in DoReceive: ", e);
             }
         }
 
         // Handles the server request. Broadcast is the only server side functionality at this point. 
-        protected static void HandleRequest(RCATContext server)
+        protected static void HandleRequest(RCATContext context)
         {
-            int i = 0;
-            foreach (string s in server.sb)
+            int i = 0; //index in server.sb
+            foreach (string s in context.receivedMessages)
             {
                 try
                 {
                     if (s != "")
                     {
-                        Log.Info("[FROM PROXY]: Strings in SB" + s);
+                        Log.Info("[PROXY->SERVANT]: Received: " + s);
                         ServerMessage message = Newtonsoft.Json.JsonConvert.DeserializeObject<ServerMessage>(s);
                         // a bug happens at this line when the servant has to concatenate multiple JSON msg together
-                        server.message = message;
+                        context.message = message;
 
                         if (message.Type == ResponseType.Connection)
-                            OnConnect(server);
+                            OnConnect(context);
                         else if (message.Type == ResponseType.Disconnect)
-                            OnDisconnect(server);
+                            OnDisconnect(context);
                         else if (message.Type == ResponseType.Position)
-                            SetPosition(server);
+                            SetPosition(context);
+                        else
+                            Log.Warn("[RCAT]: Unknown message.Type: " + message.Type.ToString());
                         i++;
                     }
                 }
-                catch (Exception e)
+                catch 
                 {
-                    Log.Warn("Error parsing JSON in RCAT.HandleRequest. JSON message was: " + server.sb[i]);
-                    Log.Debug(e);
+                    Log.Warn("[RCAT]: Error parsing JSON in RCAT.HandleRequest. JSON message was: " + context.receivedMessages[i]);
+                    //Log.Debug(e);
                 }
             }
         }
@@ -302,16 +304,16 @@ namespace RCAT
         // disconnected. Luckily for us, Alchemy handles exceptions in its event methods, so we don't
         // have random, catastrophic changes.
         /// <summary>
-        /// Event fired when a client disconnects from the Alchemy Websockets server instance.
-        /// Removes the user from the online users list and broadcasts the disconnection message
-        /// to all connected users.
+        /// Event triggered when a user disconnected from a proxy
+        /// Remove a user from the online users list 
+        /// and broadcast the disconnection message to all connected users.
         /// </summary>
         /// <param name="AContext">The user's connection context</param>
         public static void OnDisconnect(RCATContext RContext)
         {
             try
             {
-                Log.Info("Client Disconnected : " + RContext.message.Data);
+                Log.Info("[PROXY->SERVANT]: User disconnected: " + RContext.message.Data);
 
                 User user = dataConnector.GetUser(RContext.message.Data);
 
@@ -319,16 +321,16 @@ namespace RCAT
 
                 if (!String.IsNullOrEmpty(user.n))
                 {
-                    string[] clients = dataConnector.GetAllUsersNames();
-                    RContext.Broadcast(user.n,clients,ResponseType.Disconnect, RContext.message.TimeStamp);
                     dataConnector.RemoveUser(user.n);
+                    string[] clients = dataConnector.GetAllUsersNames();
+                    RContext.Broadcast(user.n, clients, ResponseType.Disconnect, RContext.message.TimeStamp);
                 }
                 else
-                    Log.Warn("ERROR: User not found!");
+                    Log.Warn("[PROXY->SERVANT]: User " + user.n + " not found OnDisconnect.");
             }
-            catch (Exception ex)
+            catch 
             {
-                Log.Error(ex);
+                Log.Error("[PROXY->SERVANT]: Error in OnDisconnect.");
             }
         }
 

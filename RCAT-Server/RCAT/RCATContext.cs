@@ -12,7 +12,11 @@ namespace RCAT
         // TODO: this constant should be set in a config file
         public static int DefaultBufferSize = 4096;
         //public StringBuilder sb = new StringBuilder();
-        public string[] sb = null;
+        /// <summary>
+        /// stores a list of json msg received from proxy through tcp pipe 
+        /// when msg are not bundled, this array contains only one element
+        /// </summary>
+        public string[] receivedMessages = null; 
         public byte[] buffer = new byte[DefaultBufferSize];
         public TcpClient proxyConnection;
         public ServerMessage message;

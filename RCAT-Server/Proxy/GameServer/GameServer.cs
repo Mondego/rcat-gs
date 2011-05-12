@@ -100,9 +100,9 @@ namespace Proxy
                 {
                     TcpConnection = serverListener.EndAcceptTcpClient(AResult);
                 }
-                catch (Exception e)
+                catch 
                 {
-                    Log.Error("[PROXY->SERVANT]: Connection with servant failed. ", e);
+                    Log.Error("[PROXY->SERVANT]: Connection with servant failed. ");
                 }
             }
             // Fill each SContext with information related to a particular servant and keep reading from the TCP pipe.
@@ -129,8 +129,8 @@ namespace Proxy
                             }
                         }
                     }
-                    catch (Exception e) {
-                        Log.Error("[PROXY->SERVANT]: Game Server Forcefully Disconnected 1.", e); 
+                    catch {
+                        Log.Error("[PROXY->SERVANT]: Game Server Forcefully Disconnected 1."); 
                     }
                 }
                 //at this point, the connexion with the servant has been lost, therefore ServerContext.Dispose() is called (because end of the using(){} block). 
@@ -151,8 +151,8 @@ namespace Proxy
             {
                 bytesReceived = SContext.serverConnection.Client.EndReceive(AResult);
             }
-            catch (Exception e) { 
-                Log.Error("[PROXY->SERVANT]: Game Server Forcefully Disconnected 2.", e);
+            catch  { 
+                Log.Error("[PROXY->SERVANT]: Game Server Forcefully Disconnected 2.");
             }
 
             // if something was received
@@ -247,11 +247,11 @@ namespace Proxy
                         i++;
                     }
                 }
-                catch (Exception e)
+                catch 
                 {
                     Log.Warn("[PROXY->SERVANT]: Error parsing JSON in GameServer.HandleRequest. JSON: " + server.sb[i]);
                     //Log.Error("Error parsing JSON in GameServer.HandleRequest",e);
-                    Log.Debug(e);
+                    //Log.Debug(e);
                 }
             }
         }

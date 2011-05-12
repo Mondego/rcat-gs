@@ -46,6 +46,10 @@ namespace Alchemy.Server.Classes
         /// </summary>
         public DataFrame DataFrame = new DataFrame();
         /// <summary>
+        /// Stores the data that has been sent (added by tho, for logging purposes)
+        /// </summary>
+        public byte[] SentData = {};
+        /// <summary>
         /// Timestamp of last message sent. 
         /// </summary>
         public long LastUpdate = 0;
@@ -76,6 +80,7 @@ namespace Alchemy.Server.Classes
         protected OnEventDelegate _OnDisconnect = (x) => { };
         protected OnEventDelegate _OnReceive = (x) => { };
         protected OnEventDelegate _OnSend = (x) => { };
+        
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserContext"/> class.
@@ -188,6 +193,7 @@ namespace Alchemy.Server.Classes
         /// <param name="Close">if set to <c>true</c> [close].</param>
         public void Send(byte[] Data, bool Close = false)
         {
+            SentData = Data; // [tho]: for logging purposes
             Context.Handler.Send(Data, Context, Close);
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Alchemy.Server;
 using System.Net;
 using Alchemy.Server.Classes;
@@ -13,7 +14,6 @@ namespace Proxy
     {
         WSServer clientListener = null;
         JsonSerializer serializer = new JsonSerializer();
-        protected static int _CLIENTLISTENERPORT = Properties.Settings.Default.client_listener_port;
 
         protected static ILog Log = null;
 
@@ -27,7 +27,7 @@ namespace Proxy
             Log = log;
             RegisterProxyMethods();
             // Client server uses Alchemy Websockets
-            clientListener = new WSServer(_CLIENTLISTENERPORT, IPAddress.Any);
+            clientListener = new WSServer(Properties.Settings.Default.client_listener_port, IPAddress.Any);
             clientListener.Log.Logger.IsEnabledFor(log4net.Core.Level.Debug);
             clientListener.DefaultOnReceive = new OnEventDelegate(OnReceive);
             clientListener.DefaultOnSend = new OnEventDelegate(OnSend);
@@ -60,7 +60,7 @@ namespace Proxy
         /// <param name="AContext"></param>
         public static void OnReceive(UserContext AContext)
         {
-            Log.Info("[CLIENT->PROXY]: Received data from : " + AContext.ClientAddress.ToString());
+            Log.Info("[CLIENT->PROXY]: Received " + AContext.DataFrame.ToString() + " from : " + AContext.ClientAddress.ToString());
             User me = new User();
             me.n = AContext.ClientAddress.ToString();
             //me.Context = AContext;
@@ -74,9 +74,9 @@ namespace Proxy
                 me.p = pos;
                 Log.Info("[CLIENT->PROXY]: Position received from Client: " + pos.t.ToString() + ":" + pos.l.ToString() + ":" + pos.z.ToString());
             }
-            catch (Exception e)
+            catch 
             {
-                Log.Warn("[CLIENT->PROXY]: Error parsing Json into a position in ClientServer.OnReceive, JSON message was: " + AContext.DataFrame.ToString() + ". Error: " + e.Message);
+                Log.Warn("[CLIENT->PROXY]: Error parsing Json into a position in ClientServer.OnReceive, JSON message was: " + AContext.DataFrame.ToString());
             }
             Proxy.sendSetPositionToServer(me); // so far, the messages received only deal with user position updates
 
@@ -88,7 +88,7 @@ namespace Proxy
         /// <param name="AContext"></param>
         public static void OnSend(UserContext AContext)
         {
-            Log.Info("[PROXY->CLIENT]: To: " + AContext.ClientAddress.ToString() + ", ClientServer sent: " + AContext.DataFrame.ToString());
+            Log.Info("[PROXY->CLIENT]: Sent: " + UTF8Encoding.UTF8.GetString(AContext.SentData) + " to: " + AContext.ClientAddress.ToString());
         }
 
         /// <summary>
@@ -135,9 +135,9 @@ namespace Proxy
                         cl.Send(json);
                     }
                 }
-                catch (Exception e)
+                catch 
                 {
-                    Log.Debug("[ClientServer]: User " + client + " not found in proxy. Likely on another proxy?",e);
+                    Log.Debug("[PROXY->CLIENT]: User " + client + " not found.");
                 }
             }
         }
