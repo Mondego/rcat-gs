@@ -322,7 +322,7 @@ namespace Alchemy.Server
                     try
                     {
                         // message listener, per client
-                        while (AContext.Connection.Connected) //BUG: it's null the 2nd time runClient is called
+                        while (AContext.Connection.Connected)
                         {
                             if (AContext.ReceiveReady.Wait(TimeOut))
                             {

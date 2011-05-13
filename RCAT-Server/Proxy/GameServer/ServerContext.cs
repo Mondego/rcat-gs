@@ -59,7 +59,8 @@ namespace Proxy
         /// <param name="Data"></param>
         public void Send(string Data)
         {
-            Send(UTF8Encoding.UTF8.GetBytes(Data + '\0'));
+            string json = Data + '\0';
+            Send(UTF8Encoding.UTF8.GetBytes(json));
         }
 
         /// <summary>

@@ -112,7 +112,6 @@ namespace RCAT
         {
             // Choose which connector to start with
             dataConnector.Connect();
-
             // Servers register their existence and communicate with proxy through TCP
             try
             {
@@ -205,12 +204,20 @@ namespace RCAT
                             var list = new List<string>();
                             list.AddRange(RContext.receivedMessages);
                             // Append last element in RContext.sb to first element of tmp array
-                            list[RContext.receivedMessages.Length - 1] = list[RContext.receivedMessages.Length - 1] + tmp[0];
-                            // Exclude the first element of tmp, and add it to the list
-                            string[] newlist = new string[tmp.Length - 1];
-                            Array.Copy(tmp, 1, newlist, 0, tmp.Length - 1);
-
-                            list.AddRange(newlist);
+                            if (values[0] != '\0')
+                            {
+                                list[RContext.receivedMessages.Length - 1] = list[RContext.receivedMessages.Length - 1] + tmp[0];
+                                // Exclude the first element of tmp, and add it to the list
+                                string[] newlist = new string[tmp.Length - 1];
+                                Array.Copy(tmp, 1, newlist, 0, tmp.Length - 1);
+                                list.AddRange(newlist);
+                            }
+                            // Starts with \0, eliminated in values.Split
+                            else
+                            {
+                                list.AddRange(tmp);
+                            }
+                            
 
                             RContext.receivedMessages = list.ToArray();
                             Log.Info("[PROXY->SERVANT]: Appended truncated message.");

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Alchemy.Server.Classes;
 using log4net;
 using System.IO;
@@ -9,6 +10,11 @@ namespace Proxy
 {
     public class Proxy
     {
+        /// <summary>
+        /// Disk lock for flushing data to file
+        /// </summary>
+        public static SemaphoreSlim DiskLock = new SemaphoreSlim(1);
+
         //
         // Delegates from Server to Clients
         //
@@ -27,7 +33,7 @@ namespace Proxy
         /// Sends a new client position to update the server
         /// </summary>
         /// <param name="user"></param>
-        public delegate void SendSetPosToServer(User user);
+        public delegate void SendSetPosToServer(User user, long timestamp);
 
         /// <summary>
         /// Informs server of a client disconnection
@@ -79,6 +85,8 @@ namespace Proxy
             }
         }
 
+        public static long startTime = DateTime.Now.Ticks;
+
         /// <summary>
         /// 
         /// </summary>
@@ -98,6 +106,8 @@ namespace Proxy
 
         static void Main(string[] args)
         {
+            SetUpLogging();
+            
             ClientServer cServer = new ClientServer(Log); // handles communication with clients through websocket protocol
             GameServer gServer = new GameServer(Log); //handles communication with servants through TCP
             Console.WriteLine("Proxy up and running. Type 'exit' to terminate it.");
@@ -114,6 +124,22 @@ namespace Proxy
             gServer.Stop();
         }
 
-        
+        private static void SetUpLogging()
+        {
+            //Create a new subfolder under the current active folder
+            string newPath = @"C:\Temp\";
+            string file = newPath + Properties.Settings.Default.log_roundtrip; 
+            // Create the subfolder
+            System.IO.Directory.CreateDirectory(newPath);
+
+            UserContext.DefaultSentCounter = Properties.Settings.Default.log_frequency;
+            if (!System.IO.File.Exists(newPath))
+            {
+                using (System.IO.FileStream fs = System.IO.File.Create(file))
+                {
+                    fs.Close();
+                }
+            }
+        }
     }
 }

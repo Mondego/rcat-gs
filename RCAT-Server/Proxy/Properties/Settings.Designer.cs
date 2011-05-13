@@ -58,5 +58,29 @@ namespace Proxy.Properties {
                 this["max_simultaneous_handshakes"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int log_frequency {
+            get {
+                return ((int)(this["log_frequency"]));
+            }
+            set {
+                this["log_frequency"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("roundtrip.log")]
+        public string log_roundtrip {
+            get {
+                return ((string)(this["log_roundtrip"]));
+            }
+            set {
+                this["log_roundtrip"] = value;
+            }
+        }
     }
 }

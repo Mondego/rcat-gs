@@ -65,6 +65,27 @@ namespace Alchemy.Server.Classes
         /// The path of this request.
         /// </summary>
         public string RequestPath = "/";
+
+        /// <summary>
+        /// Stores the buffer of data to be flushed to file
+        /// </summary>
+        public StringBuilder RoundtripLog = new StringBuilder("Client\tInterval\n");
+
+        /// <summary>
+        /// Semaphore to check if SentCounter reached 0
+        /// </summary>
+        public SemaphoreSlim SentSemaphore = new SemaphoreSlim(1);
+
+        /// <summary>
+        /// Default value for logging sent values
+        /// </summary>
+        public static int DefaultSentCounter = 20;
+
+        /// <summary>
+        /// Counter to log timestamp difference between receiveing a setposition on proxy and broadcasting it to others
+        /// </summary>
+        public int SentCounter = DefaultSentCounter;
+
         /// <summary>
         /// The remote endpoint address.
         /// </summary>

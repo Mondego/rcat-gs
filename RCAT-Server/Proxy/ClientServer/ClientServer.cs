@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Text;
 using Alchemy.Server;
 using System.Net;
@@ -12,10 +13,24 @@ namespace Proxy
 {
     public class ClientServer
     {
+        class LoggingObject
+        {
+            public long lastupdate;
+            public UserContext user;
+
+            public LoggingObject(long _lastupdate, UserContext _user)
+            {
+                lastupdate = _lastupdate;
+                user = _user;
+            }
+        }
+
         WSServer clientListener = null;
         JsonSerializer serializer = new JsonSerializer();
 
         protected static ILog Log = null;
+
+        private static string RoundTripLogName = Properties.Settings.Default.log_roundtrip;
 
         protected void RegisterProxyMethods()
         {
@@ -61,12 +76,9 @@ namespace Proxy
         public static void OnReceive(UserContext AContext)
         {
             Log.Info("[CLIENT->PROXY]: Received " + AContext.DataFrame.ToString() + " from : " + AContext.ClientAddress.ToString());
+            long timestamp = DateTime.Now.Ticks;
             User me = new User();
             me.n = AContext.ClientAddress.ToString();
-            //me.Context = AContext;
-
-            // Object me will be sent to servant layer. Useless to send the whole UserContext, just need name and position
-            me.Context = null;
             try
             {
                 string json = AContext.DataFrame.ToString();
@@ -78,7 +90,7 @@ namespace Proxy
             {
                 Log.Warn("[CLIENT->PROXY]: Error parsing Json into a position in ClientServer.OnReceive, JSON message was: " + AContext.DataFrame.ToString());
             }
-            Proxy.sendSetPositionToServer(me); // so far, the messages received only deal with user position updates
+            Proxy.sendSetPositionToServer(me,timestamp); // so far, the messages received only deal with user position updates
 
         }
 
@@ -118,28 +130,71 @@ namespace Proxy
         /// <param name="broadcast"></param>
         public void BroadcastToClients(ClientMessage broadcast)
         {
-            foreach (string client in broadcast.clients)
+            string name = (string)broadcast.Data.SelectToken("n");
+            UserContext user = Proxy.onlineUsers[name];
+            long lastupdate = user.LastUpdate;
+
+            if (broadcast.TimeStamp >= lastupdate)
             {
-                try
+                // TODO: Not Thread Safe
+                user.LastUpdate = broadcast.TimeStamp;
+                foreach (string client in broadcast.clients)
                 {
-                    UserContext cl = Proxy.onlineUsers[client];
-                    if (broadcast.Type != ResponseType.Position || broadcast.TimeStamp >= cl.LastUpdate)
+                    try
                     {
+                        UserContext cl = Proxy.onlineUsers[client];
                         Message m = new Message();
                         m.Type = broadcast.Type;
                         m.Data = broadcast.Data;
-                        cl.LastUpdate = broadcast.TimeStamp;
+                        //cl.LastUpdate = broadcast.TimeStamp;
 
                         string json = JsonConvert.SerializeObject(m);
 
                         cl.Send(json);
                     }
-                }
-                catch 
-                {
-                    Log.Debug("[PROXY->CLIENT]: User " + client + " not found.");
+                    catch
+                    {
+                        Log.Debug("[PROXY->CLIENT]: User " + client + " not found.");
+                    }
                 }
             }
+
+            user.SentSemaphore.Wait();
+            user.SentCounter--;
+            if (user.SentCounter < 0)
+            {
+                user.SentCounter = UserContext.DefaultSentCounter;
+                LoggingObject logobj = new LoggingObject(lastupdate, user);
+                ThreadPool.QueueUserWorkItem(new WaitCallback(LogRoundTrip), logobj);
+            }
+            user.SentSemaphore.Release();
+            
+        }
+
+        static void LogRoundTrip(Object stateInfo)
+        {
+            // TODO: Not Thread Safe
+            LoggingObject logobj = (LoggingObject)stateInfo;
+            UserContext user = logobj.user;
+            long lastupdate = logobj.lastupdate;
+
+            long now = DateTime.Now.Ticks;
+            long interval = now - lastupdate;
+            user.RoundtripLog.Append(user.ClientAddress + "\t" + interval.ToString() + "\n");
+            
+            // Flush every 10 Seconds
+            if (now - Proxy.startTime > 100000)
+            {
+                Proxy.DiskLock.Wait();
+                // Example #4: Append new text to an existing file
+                using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Temp\"+RoundTripLogName, true))
+                {
+                    file.Write(user.RoundtripLog);
+                }
+                Proxy.DiskLock.Release();
+            }
+            Proxy.startTime = now;
+            user.RoundtripLog.Clear();
         }
     }
 }

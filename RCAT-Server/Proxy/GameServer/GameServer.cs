@@ -27,6 +27,8 @@ namespace Proxy
         private static int _MAX_SIMULTANEOUS_HANDSHAKE = Properties.Settings.Default.max_simultaneous_handshakes;
         private SemaphoreSlim ConnectReady = new SemaphoreSlim(_MAX_SIMULTANEOUS_HANDSHAKE);
 
+        private SemaphoreSlim PickServerSemaphore = new SemaphoreSlim(1);
+
         protected int roundrobin = 0;
 
         protected JsonSerializer serializer = new JsonSerializer();
@@ -176,15 +178,23 @@ namespace Proxy
                         var msgStrList = new List<string>();
                         msgStrList.AddRange(SContext.sb); //list now contains all previous msgStr that were truncated
                         // Append last element in RContext.sb to first element of tmp array (concat the beginning and the end of the packet in the middle of the truncation)
-                        msgStrList[SContext.sb.Length - 1] = msgStrList[SContext.sb.Length - 1] + tmp[0];
-                        // Exclude the first element of tmp, and add it to the list
-                        //var segment = new ArraySegment<string>(tmp, 1, tmp.Length - 1);
-                        //msgStrList.AddRange(segment.Array);
 
-                        string[] newlist = new string[tmp.Length - 1];
-                        Array.Copy(tmp, 1, newlist, 0, tmp.Length - 1);
+                        if (msgStr[0] != '\0')
+                        {
+                            msgStrList[SContext.sb.Length - 1] = msgStrList[SContext.sb.Length - 1] + tmp[0];
+                            // Exclude the first element of tmp, and add it to the list
+                            //var segment = new ArraySegment<string>(tmp, 1, tmp.Length - 1);
+                            //msgStrList.AddRange(segment.Array);
 
-                        msgStrList.AddRange(newlist);
+                            string[] newlist = new string[tmp.Length - 1];
+                            Array.Copy(tmp, 1, newlist, 0, tmp.Length - 1);
+
+                            msgStrList.AddRange(newlist);
+                        }
+                        else
+                        {
+                            msgStrList.AddRange(tmp);
+                        }
                         
                         SContext.sb = msgStrList.ToArray();
                         Log.Info("[PROXY->SERVANT]: Appended truncated message.");
@@ -260,7 +270,7 @@ namespace Proxy
         ///  Sends client data to the server
         /// </summary>
         /// <param name="client"></param>
-        public void SendPosition(User client)
+        public void SendPosition(User client, long timestamp)
         {
             //ServerContext server = clientPerServer[client.Name];
             ServerContext server = PickServer();
@@ -268,11 +278,9 @@ namespace Proxy
             ServerMessage resp = new ServerMessage();
             resp.Type = ResponseType.Position;
             resp.Data = client;
-            resp.TimeStamp = DateTime.Now.Ticks;
+            resp.TimeStamp = timestamp;
 
-            Log.Info("[PROXY->SERVANT]: Sending Client info: " + resp.Data.ToString());
-            
-            server.Send(Newtonsoft.Json.JsonConvert.SerializeObject(resp) + '\0');
+            server.Send(Newtonsoft.Json.JsonConvert.SerializeObject(resp));
         }
 
         /// <summary>
@@ -296,11 +304,23 @@ namespace Proxy
         /// <returns></returns>
         protected ServerContext PickServer()
         {
-            ServerContext server =  onlineServers[roundrobin];
-            Interlocked.Increment(ref roundrobin);
-            if (roundrobin >= onlineServers.Count)
-                roundrobin = 0;
-            return server;
+
+            PickServerSemaphore.Wait();
+            try
+            {
+                ServerContext server = onlineServers[roundrobin];
+                roundrobin++;
+                if (roundrobin >= onlineServers.Count)
+                    roundrobin = 0;
+                PickServerSemaphore.Release();
+                return server;
+            }
+            catch (Exception e)
+            {
+                Log.Error("Error in PickServer. Roundrobin is: " + roundrobin.ToString() + ", onlinservers length is " + onlineServers.Count.ToString(), e);
+            }
+            PickServerSemaphore.Release();
+            return null;
         }
 
         /// <summary>
