@@ -243,6 +243,8 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 			key = new StringBuilder(key).insert(position, randChar).toString();
 		}
 		for (int i = 0; i < spaces; i++){
+			if(key.length() - 1 <= 0)
+				System.out.println("bleh");
 			int position = r.nextInt(key.length() - 1) + 1;
 			position = Math.abs(position);
 			key = new StringBuilder(key).insert(position,"\u0020").toString();

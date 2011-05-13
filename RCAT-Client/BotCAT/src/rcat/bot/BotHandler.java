@@ -15,8 +15,8 @@ class Bot extends WebSocketClient {
 	int top;
 	int left;
 	Random r;
-	static int TOP_SHIFT = 1;
-	static int LEFT_SHIFT = 2; // these 2 values depend on the screen to look at them. In our case, canvas in browser 
+	static int TOP_SHIFT = 4;
+	static int LEFT_SHIFT = 8; // these 2 values depend on the screen to look at them. In our case, canvas in browser 
 	static int MAXTOP = 140;
 	static int MAXLEFT = 290;
 	long millisOrigin = 0; //time origin for the experiments
@@ -128,18 +128,19 @@ class Bot extends WebSocketClient {
 		long tid = Thread.currentThread().getId();
 		botPrint("RNG seed = " + tid);
 		r = new Random(tid);
-		this.top = r.nextInt(20) * 20;
-		this.left = r.nextInt(20) * 20;
+		this.top = r.nextInt(MAXTOP);
+		this.left = r.nextInt(MAXLEFT);
 		while(counter > 0) {
 			counter --;
 			waitThenMove();
 		}
 		try {
-			Thread.sleep(10000);
+			Thread.sleep(1000);
 		} catch (InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		
 		try {
 			close();
 		} catch (IOException e) {
@@ -150,7 +151,7 @@ class Bot extends WebSocketClient {
 
 	public void botPrint(String msg) {
 		long tid = Thread.currentThread().getId();
-		System.out.println((System.currentTimeMillis() - this.millisOrigin) + " \t Thread#" + tid + " \t " + msg);
+		System.out.println("t-" + tid + ":" + (System.currentTimeMillis() - this.millisOrigin) + " \t " + msg);
 	}
 	/**
 	 * create a bot that connects to the server

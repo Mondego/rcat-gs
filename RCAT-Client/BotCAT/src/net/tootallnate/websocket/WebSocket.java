@@ -130,7 +130,7 @@ public final class WebSocket {
 			if (!this.handshakeComplete) {
 				recieveHandshake();
 			} else {
-				recieveFrame();
+				receiveFrame();
 			}
 		}
 	}
@@ -209,7 +209,7 @@ public final class WebSocket {
 	}
 
 	// PRIVATE INSTANCE METHODS ////////////////////////////////////////////////
-	private void recieveFrame() {
+	private void receiveFrame() {
 		byte newestByte = this.buffer.get();
 
 		if (newestByte == START_OF_FRAME) { // Beginning of Frame
