@@ -35,10 +35,11 @@
 
 <div id="connectAndLogBoxes">
 	<div id="connectBox">
-		Server: <input id="serverUrl" value="ws://chateau.ics.uci.edu:81/websocket"/>
-		<button id="connect">Connect</button>
-		<button id="disconnect" style="display:none">Disconnect</button>
+		Server: <input id="serverUrl" value="ws://opensim.ics.uci.edu:81/websocket"/>
+		<button id="connect" style="display:none">Connect</button>
+		<button id="disconnect">Disconnect</button>
 		<button id="cancelNPC">Take Control!</button>
+		<button id="activateNPC" style="display:none">Give Control!</button>
 	</div>
 	<div id="chatLog"></div>
 </div>
@@ -93,8 +94,6 @@ function connect(){
 	try {
 		socket = new WebSocket(host);
 		log('Socket Status: ' + socket.readyState + ' (socket created)');
-		$('#connect').hide();
-		$('#disconnect').show();
 		socket.onopen = function() {
 			log('Socket Status: ' + socket.readyState + ' (socket.onopen)');
 			npcTimer = setInterval(runAsNpc, NPC_DELAY); //move randomly
@@ -107,7 +106,7 @@ function connect(){
 			var msg = JSON.parse(rawmsg.data);
 			switch(msg.Type) {
 			case 1: //someone logged off
-				userDisconnected(msg.Data);
+				userDisconnected(msg.Data.n);
 				break;
 			case 2: //received a pos
 				receivePos(msg.Data.n, msg.Data.p.t, msg.Data.p.l);
@@ -183,8 +182,6 @@ function disconnect() {
 	removeAllUsers();
 	socket.close();
 	log('Connection closed. Socket Status: ' + socket.readyState);
-	$('#disconnect').hide();
-	$('#connect').show();
 	document.onkeypress = null;
 }
 
@@ -267,19 +264,33 @@ function draw() {
 
 $('#disconnect').bind('click', function(e) {
 	//e.preventDefault();
+	$('#disconnect').hide();
+	$('#connect').show();
+	$('#cancelNPC').hide();
+	$('#activateNPC').hide();
 	disconnect();
 });
 
 $('#connect').bind('click', function(e) {
 	//e.preventDefault();
+	$('#cancelNPC').show();
+	$('#connect').hide();
+	$('#disconnect').show();
 	connect();
 });
 
-
+// buttons for NPC actions
 $('#cancelNPC').bind('click', function(e) {
 	clearInterval(npcTimer);
 	$('#cancelNPC').hide();
+	$('#activateNPC').show();
 });
+$('#activateNPC').bind('click', function(e) {
+	npcTimer = setInterval(runAsNpc, NPC_DELAY); 
+	$('#activateNPC').hide();
+	$('#cancelNPC').show();
+});
+
 
 var direction = 4;
 function runAsNpc() {
