@@ -132,12 +132,11 @@ namespace Alchemy.Server.Handlers
                 //AContext.SendReady.Wait();
                 try
                 {
-                    if (AContext.Connection.Connected)
                     AContext.Connection.Client.BeginSend(WrappedData, 0, WrappedData.Length, SocketFlags.None, ACallback, AContext);
                 }
                 catch
                 {
-                    Console.WriteLine("[WebSocketHandler]: Exception sending");
+                    //Console.WriteLine("[WebSocketHandler]: Exception sending");
                     //AContext.SendReady.Release();
                 }
         }
@@ -148,18 +147,28 @@ namespace Alchemy.Server.Handlers
         /// <param name="AResult">The Async result.</param>
         public override void EndSend(IAsyncResult AResult)
         {
-            Context AContext = (Context)AResult.AsyncState;
             try
             {
-                AContext.Connection.Client.EndSend(AResult);
-                //AContext.SendReady.Release();
+                Context AContext = (Context)AResult.AsyncState;
+                if (AContext != null && AContext.Connection != null)
+                {
+                    try
+                    {
+                        AContext.Connection.Client.EndSend(AResult);
+                        AContext.UserContext.OnSend();
+                        //AContext.SendReady.Release();
+                    }
+                    catch (Exception e)
+                    {
+                        //Console.WriteLine("[WebSocketHandler]: Exception end send. " + e.Message + e.StackTrace);
+                        //AContext.SendReady.Release(); 
+                    }
+                }
             }
-            catch (Exception e)
+            catch
             {
-                Console.WriteLine("[WebSocketHandler]: Exception end send. " + e.Message + e.StackTrace);
-                //AContext.SendReady.Release(); 
+                
             }
-            AContext.UserContext.OnSend();
         }
 
         /// <summary>

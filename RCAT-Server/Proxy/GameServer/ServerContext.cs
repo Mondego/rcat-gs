@@ -94,8 +94,7 @@ namespace Proxy
             try
             {
                 SContext.serverConnection.Client.EndSend(AResult);
-                //GameServer.Log.Info("[PROXY->SERVANT]: Sent " + UTF8Encoding.UTF8.GetString(SContext.SendBuffer,0,1024));
-                GameServer.Log.Info("[PROXY->SERVANT]: Sent " + UTF8Encoding.UTF8.GetString(SContext.SendBuffer, 0, 128)); //no msg should be longer than 128 in our case
+                //GameServer.Log.Info("[PROXY->SERVANT]: Sent " + UTF8Encoding.UTF8.GetString(SContext.SendBuffer, 0, 128)); //no msg should be longer than 128 in our case
                 //AContext.SendReady.Release();
             }
             catch (Exception e)

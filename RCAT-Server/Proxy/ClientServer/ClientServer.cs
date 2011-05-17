@@ -137,49 +137,60 @@ namespace Proxy
         /// <param name="broadcast"></param>
         public void BroadcastToClients(ClientMessage broadcast)
         {
-            string name = (string)broadcast.Data.SelectToken("n");
-            UserContext user = Proxy.onlineUsers[name];
-            
-            long lastupdate = user.LastUpdate;
-            if (broadcast.Type == ResponseType.Disconnect)
-                lastupdate = 0; // Just to be sure it will enter next if
-
-            user.SentSemaphore.Wait();
-            if (broadcast.TimeStamp >= lastupdate)
+            try
             {
-                user.LastUpdate = broadcast.TimeStamp;
-                foreach (string client in broadcast.clients)
+                string name = (string)broadcast.Data.SelectToken("n");
+                UserContext user = Proxy.onlineUsers[name];
+
+                long lastupdate = user.LastUpdate;
+                if (broadcast.Type == ResponseType.Disconnect)
+                    lastupdate = 0; // Just to be sure it will enter next if
+
+                user.SentSemaphore.Wait();
+                if (broadcast.TimeStamp >= lastupdate)
                 {
-                    try
+                    user.LastUpdate = broadcast.TimeStamp;
+                    foreach (string client in broadcast.clients)
                     {
-                        UserContext cl = Proxy.onlineUsers[client];
-                        Message m = new Message();
-                        m.Type = broadcast.Type;
-                        m.Data = broadcast.Data;
+                        try
+                        {
+                            UserContext cl = Proxy.onlineUsers[client];
+                            Message m = new Message();
+                            m.Type = broadcast.Type;
+                            m.Data = broadcast.Data;
 
-                        string json = JsonConvert.SerializeObject(m);
+                            string json = JsonConvert.SerializeObject(m);
 
-                        cl.Send(json);
-                    }
-                    catch
-                    {
-                        Log.Debug("[PROXY->CLIENT]: User " + client + " not found.");
+                            cl.Send(json);
+                        }
+                        catch
+                        {
+                            Log.Debug("[PROXY->CLIENT]: User " + client + " not found.");
+                        }
                     }
                 }
-            }
-            if (broadcast.Type == ResponseType.Disconnect)
-                Proxy.onlineUsers.Remove(name);
 
-            user.SentCounter--;
-            if (user.SentCounter < 0)
-            {
-                user.SentCounter = UserContext.DefaultSentCounter;
-                long timetoprocess = user.TimeToProcess;
-                LoggingObject logobj = new LoggingObject(lastupdate, user, timetoprocess);
-                ThreadPool.QueueUserWorkItem(new WaitCallback(LogRoundTrip), logobj);
-                user.TimeToProcess = DateTime.Now.Ticks;
+                if (broadcast.Type == ResponseType.Disconnect)
+                {
+                    if (Proxy.onlineUsers.ContainsKey(name))
+                        Proxy.onlineUsers.Remove(name);
+                }
+
+                user.SentCounter--;
+                if (user.SentCounter < 0)
+                {
+                    user.SentCounter = UserContext.DefaultSentCounter;
+                    long timetoprocess = user.TimeToProcess;
+                    LoggingObject logobj = new LoggingObject(lastupdate, user, timetoprocess);
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(LogRoundTrip), logobj);
+                    user.TimeToProcess = DateTime.Now.Ticks;
+                }
+                user.SentSemaphore.Release();
             }
-            user.SentSemaphore.Release();
+            catch (Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         public void SendToClient(ClientMessage message)

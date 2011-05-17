@@ -74,6 +74,7 @@ namespace RCAT
         public void EndSend(IAsyncResult AResult)
         {
             RCATContext RContext = (RCATContext)AResult.AsyncState;
+            if (RContext != null && RContext.proxyConnection.Connected)
             try
             {
                 RContext.proxyConnection.Client.EndSend(AResult);
