@@ -17,10 +17,12 @@ namespace Proxy
         {
             public long lastupdate;
             public UserContext user;
+            public long timetoprocess;
 
-            public LoggingObject(long _lastupdate, UserContext _user)
+            public LoggingObject(long _lastupdate, UserContext _user, long _timetoprocess)
             {
                 lastupdate = _lastupdate;
+                timetoprocess = _timetoprocess;
                 user = _user;
             }
         }
@@ -35,6 +37,7 @@ namespace Proxy
         protected void RegisterProxyMethods()
         {
             Proxy.broadcastToClients = BroadcastToClients;
+            Proxy.sendToClient = SendToClient;
         }
 
         public ClientServer(ILog log)
@@ -64,6 +67,7 @@ namespace Proxy
             User me = new User();
             me.n = AContext.ClientAddress.ToString();
             me.Context = AContext;
+            AContext.TimeToProcess = DateTime.Now.Ticks;
 
             Proxy.onlineUsers.Add(me.n, me.Context);
             Proxy.sendClientConnectToServer(AContext);
@@ -75,7 +79,7 @@ namespace Proxy
         /// <param name="AContext"></param>
         public static void OnReceive(UserContext AContext)
         {
-            Log.Info("[CLIENT->PROXY]: Received " + AContext.DataFrame.ToString() + " from : " + AContext.ClientAddress.ToString());
+            //Log.Info("[CLIENT->PROXY]: Received " + AContext.DataFrame.ToString() + " from : " + AContext.ClientAddress.ToString());
             long timestamp = DateTime.Now.Ticks;
             User me = new User();
             me.n = AContext.ClientAddress.ToString();
@@ -84,11 +88,13 @@ namespace Proxy
                 string json = AContext.DataFrame.ToString();
                 Position pos = JsonConvert.DeserializeObject<Position>(json);
                 me.p = pos;
-                Log.Info("[CLIENT->PROXY]: Position received from Client: " + pos.t.ToString() + ":" + pos.l.ToString() + ":" + pos.z.ToString());
+                //Log.Info("[CLIENT->PROXY]: Position received from Client: " + pos.t.ToString() + ":" + pos.l.ToString() + ":" + pos.z.ToString());
             }
-            catch 
+            catch (Exception e)
             {
-                Log.Warn("[CLIENT->PROXY]: Error parsing Json into a position in ClientServer.OnReceive, JSON message was: " + AContext.DataFrame.ToString());
+                string test = AContext.DataFrame.ToString();
+                if (test.StartsWith("\0") == false)
+                    Log.Warn("[CLIENT->PROXY]: Error parsing Json into a position in ClientServer.OnReceive, JSON message was: " + AContext.DataFrame.ToString());
             }
             Proxy.sendSetPositionToServer(me,timestamp); // so far, the messages received only deal with user position updates
 
@@ -111,7 +117,7 @@ namespace Proxy
         {
             Log.Info("[CLIENT->PROXY]: Client " + AContext.ClientAddress.ToString() + " disconnected.");
 
-            Proxy.onlineUsers.Remove(AContext.ClientAddress.ToString());
+            //Proxy.onlineUsers.Remove(AContext.ClientAddress.ToString());
             Proxy.sendClientDisconnectToServer(AContext); //handled by the gameserver side of the proxy
         }
 
@@ -133,10 +139,12 @@ namespace Proxy
             string name = (string)broadcast.Data.SelectToken("n");
             UserContext user = Proxy.onlineUsers[name];
             long lastupdate = user.LastUpdate;
+            if (broadcast.Type == ResponseType.Disconnect)
+                lastupdate = 0; // Just to be sure it will enter next if
 
+            user.SentSemaphore.Wait();
             if (broadcast.TimeStamp >= lastupdate)
             {
-                // TODO: Not Thread Safe
                 user.LastUpdate = broadcast.TimeStamp;
                 foreach (string client in broadcast.clients)
                 {
@@ -146,7 +154,6 @@ namespace Proxy
                         Message m = new Message();
                         m.Type = broadcast.Type;
                         m.Data = broadcast.Data;
-                        //cl.LastUpdate = broadcast.TimeStamp;
 
                         string json = JsonConvert.SerializeObject(m);
 
@@ -158,17 +165,37 @@ namespace Proxy
                     }
                 }
             }
-
-            user.SentSemaphore.Wait();
+            Proxy.onlineUsers.Remove(name);
             user.SentCounter--;
             if (user.SentCounter < 0)
             {
                 user.SentCounter = UserContext.DefaultSentCounter;
-                LoggingObject logobj = new LoggingObject(lastupdate, user);
+                long timetoprocess = user.TimeToProcess;
+                LoggingObject logobj = new LoggingObject(lastupdate, user, timetoprocess);
                 ThreadPool.QueueUserWorkItem(new WaitCallback(LogRoundTrip), logobj);
+                user.TimeToProcess = DateTime.Now.Ticks;
             }
             user.SentSemaphore.Release();
-            
+        }
+
+        public void SendToClient(ClientMessage message)
+        {
+            string name = message.clients[0];
+            UserContext user = Proxy.onlineUsers[name];
+            try
+            {
+                Message m = new Message();
+                m.Type = message.Type;
+                m.Data = message.Data;
+
+                string json = JsonConvert.SerializeObject(m);
+
+                user.Send(json);
+            }
+            catch
+            {
+                Log.Debug("[PROXY->CLIENT]: User " + user + " not found.");
+            }
         }
 
         static void LogRoundTrip(Object stateInfo)
@@ -179,8 +206,10 @@ namespace Proxy
             long lastupdate = logobj.lastupdate;
 
             long now = DateTime.Now.Ticks;
-            long interval = now - lastupdate;
-            user.RoundtripLog.Append(user.ClientAddress + "\t" + interval.ToString() + "\n");
+            long roundtrip = now - lastupdate;
+            long timeprocess = now - logobj.timetoprocess;
+            user.RoundtripLog.Append(user.ClientAddress + "\t" + roundtrip.ToString() + "\t" + timeprocess.ToString() + "\n");
+
             
             // Flush every 10 Seconds
             if (now - Proxy.startTime > 100000)

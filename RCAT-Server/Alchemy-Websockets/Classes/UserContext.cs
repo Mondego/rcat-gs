@@ -53,6 +53,12 @@ namespace Alchemy.Server.Classes
         /// Timestamp of last message sent. 
         /// </summary>
         public long LastUpdate = 0;
+
+        /// <summary>
+        /// Time to process x number of messages when logging
+        /// </summary>
+        public long TimeToProcess = 0;
+
         /// <summary>
         /// What character encoding to use.
         /// </summary>
@@ -69,7 +75,7 @@ namespace Alchemy.Server.Classes
         /// <summary>
         /// Stores the buffer of data to be flushed to file
         /// </summary>
-        public StringBuilder RoundtripLog = new StringBuilder("Client\tInterval\n");
+        public StringBuilder RoundtripLog = new StringBuilder("Client\tRoundTrip\tTimeToProcess\n");
 
         /// <summary>
         /// Semaphore to check if SentCounter reached 0

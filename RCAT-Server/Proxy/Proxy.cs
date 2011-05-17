@@ -20,7 +20,13 @@ namespace Proxy
         //
 
         /// <summary>
-        /// Sends data from server to specified clients. 
+        /// Sends Message.Data to one client (Message.clients[0])
+        /// </summary>
+        /// <param name="broadcast"></param>
+        public delegate void SendToClient(ClientMessage broadcast);
+
+        /// <summary>
+        /// Sends Message.Data to specified clients (Message.clients). 
         /// </summary>
         /// <param name="users"></param>
         public delegate void BroadcastToClients(ClientMessage broadcast);
@@ -49,6 +55,7 @@ namespace Proxy
 
         // Clientserver implements this method
         public static BroadcastToClients broadcastToClients;
+        public static SendToClient sendToClient;
 
         // Gameserver implements these methods
         public static SendSetPosToServer sendSetPositionToServer;

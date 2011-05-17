@@ -7,7 +7,13 @@ namespace RCAT.Connectors
 {
     class MemoryConnector : DataConnector
     {
-        protected Dictionary<string, User> onlineUsers = new Dictionary<string, User>();
+        class DataStore
+        {
+            public User user;
+            public long timestamp;
+        }
+        private Dictionary<string, DataStore> onlineUsers = new Dictionary<string, DataStore>();
+        private Dictionary<string, User> userList = new Dictionary<string, User>();
 
         public override void Connect()
         {
@@ -18,17 +24,24 @@ namespace RCAT.Connectors
         {
             if (onlineUsers.ContainsKey(userName))
             {
-                User update = onlineUsers[userName];
-                update.p = pos;
-                // Do I need this last line? 
-                onlineUsers[userName] = update;
+                DataStore update = onlineUsers[userName];
+                if (timestamp >= update.timestamp)
+                {
+                    update.user.p = pos;
+                    // Do I need this last line? 
+                    onlineUsers[userName] = update;
+                }
             }
             else
             {
+                DataStore ds = new DataStore();
                 User newUser = new User();
                 newUser.p = pos;
                 newUser.n = userName;
-                onlineUsers.Add(userName, newUser);
+                ds.user = newUser;
+                ds.timestamp = timestamp;
+                onlineUsers.Add(userName, ds);
+                userList.Add(userName, newUser);
             }
         }
 
@@ -40,12 +53,15 @@ namespace RCAT.Connectors
         public override void RemoveUser(string userName)
         {
             if (onlineUsers.ContainsKey(userName))
+            {
                 onlineUsers.Remove(userName);
+                userList.Remove(userName);
+            }
         }
 
         public override User GetUser(string userName)
         {
-            return onlineUsers[userName];
+            return userList[userName];
         }
 
         public override string[] GetAllUsersNames()
@@ -55,7 +71,8 @@ namespace RCAT.Connectors
 
         public override User[] GetAllUsers()
         {
-            return onlineUsers.Values.ToArray<User>();
+            return userList.Values.ToArray<User>();
         }
     }
 }
+

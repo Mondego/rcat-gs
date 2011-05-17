@@ -16,10 +16,12 @@ namespace RCAT
         /// stores a list of json msg received from proxy through tcp pipe 
         /// when msg are not bundled, this array contains only one element
         /// </summary>
-        public string[] receivedMessages = null; 
+        public string[] receivedMessages = null;
+
+        public string leftover = "";
         public byte[] buffer = new byte[DefaultBufferSize];
         public TcpClient proxyConnection;
-        public ServerMessage message;
+        //public ServerMessage message;
         public SemaphoreSlim ReceiveReady = new SemaphoreSlim(1);
         public bool IsTruncated = false;
 

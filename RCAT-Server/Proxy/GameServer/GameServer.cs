@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -122,7 +123,7 @@ namespace Proxy
                         {
                             if (SContext.ReceiveReady.Wait(TimeOut)) //wait until timeout
                             {
-                                SContext.serverConnection.Client.BeginReceive(SContext.Buffer, 0, SContext.Buffer.Length, SContext.sflag, new AsyncCallback(DoReceive), SContext);
+                                SContext.serverConnection.Client.BeginReceive(SContext.buffer, 0, SContext.buffer.Length, SContext.sflag, new AsyncCallback(DoReceive), SContext);
                             }
                             else 
                             {
@@ -147,82 +148,46 @@ namespace Proxy
         private void DoReceive(IAsyncResult AResult)
         {
             ServerContext SContext = (ServerContext)AResult.AsyncState;
-            int bytesReceived = 0;
+            int received = 0;
 
             try
             {
-                bytesReceived = SContext.serverConnection.Client.EndReceive(AResult);
+                received = SContext.serverConnection.Client.EndReceive(AResult);
             }
             catch  { 
                 Log.Error("[PROXY->SERVANT]: Game Server Forcefully Disconnected 2.");
             }
-
+            try
+            {
             // if something was received
-            if (bytesReceived > 0)
-            {
-                string msgStr = UTF8Encoding.UTF8.GetString(SContext.Buffer, 0, bytesReceived);
-                int maxBufSize = RCATContext.DefaultBufferSize; //servants and proxy have agree on the same MTU. If a packet is larger than maxBufSize, the sending servant flags it as truncated.
-                // packets terminate by \0 and can be bundled by servants. If the last packet in the msg is cut, store it and read (at least) the following msg to get the rest of it.
-                if ((bytesReceived == maxBufSize && !msgStr.EndsWith("\0")) || SContext.IsTruncated)
+                if (received > 0)
                 {
-                    if (SContext.IsTruncated == false) // Previous msg was not truncated
+                    string values = UTF8Encoding.UTF8.GetString(SContext.buffer, 0, received);
+                    string[] tmp = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+                    List<string> commands = tmp.ToList<string>();
+                    
+                    if (SContext.IsTruncated)
+                            commands[0] = SContext.leftover + commands[0];
+                    if (values.EndsWith("\0"))
+                        SContext.IsTruncated = false;
+                    else
                     {
-                        SContext.sb = msgStr.Split(new char[]{'\0'} , StringSplitOptions.RemoveEmptyEntries);
                         SContext.IsTruncated = true;
-                        SContext.serverConnection.Client.BeginReceive(SContext.Buffer, 0, maxBufSize, SocketFlags.None, new AsyncCallback(DoReceive), SContext);
+                        SContext.leftover = commands[commands.Count - 1];
+                        commands.RemoveAt(commands.Count - 1);
                     }
-                    else // previous msg was truncated: I concat current msg to the previous one 
-                    {
-                        string[] tmp = msgStr.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
-
-                        var msgStrList = new List<string>();
-                        msgStrList.AddRange(SContext.sb); //list now contains all previous msgStr that were truncated
-                        // Append last element in RContext.sb to first element of tmp array (concat the beginning and the end of the packet in the middle of the truncation)
-
-                        if (msgStr[0] != '\0')
-                        {
-                            msgStrList[SContext.sb.Length - 1] = msgStrList[SContext.sb.Length - 1] + tmp[0];
-                            // Exclude the first element of tmp, and add it to the list
-                            //var segment = new ArraySegment<string>(tmp, 1, tmp.Length - 1);
-                            //msgStrList.AddRange(segment.Array);
-
-                            string[] newlist = new string[tmp.Length - 1];
-                            Array.Copy(tmp, 1, newlist, 0, tmp.Length - 1);
-
-                            msgStrList.AddRange(newlist);
-                        }
-                        else
-                        {
-                            msgStrList.AddRange(tmp);
-                        }
-                        
-                        SContext.sb = msgStrList.ToArray();
-                        Log.Info("[PROXY->SERVANT]: Appended truncated message.");
-
-                        if (msgStr.EndsWith("\0")) // even though a servant had to send more data (and flagged a msg as truncated), in this case no packet in the msg is truncated. Same as non-truncated msg, really.
-                        {
-                            SContext.IsTruncated = false;
-                            HandleRequest(SContext);
-                            SContext.ReceiveReady.Release();
-                        }
-                        else
-                        {
-                            SContext.serverConnection.Client.BeginReceive(SContext.Buffer, 0, maxBufSize, SocketFlags.None, new AsyncCallback(DoReceive), SContext);
-                        }
-                    }
-                }
-                else //msg was smaller than max buffer size, no truncation, "normal" case
-                {
-                    SContext.sb = msgStr.Split('\0');
-                    HandleRequest(SContext);
                     SContext.ReceiveReady.Release();
+                    HandleRequest(SContext, commands);
                 }
-
+                else
+                {
+                    // What do we do if lose connection to RCAT?
+                    SContext.Dispose();
+                }
             }
-            else //if nothing was received yet doReceive was called, it's because the servant died
+            catch (Exception e)
             {
-                onlineServers.Remove(SContext);
-                SContext.Dispose();
+                Log.Error("[SERVANT->PROXY]: Error in DoReceive: ", e);
             }
         }
 
@@ -232,10 +197,10 @@ namespace Proxy
         /// Handles the server request. If position, message.data is a ClientBroadcast object. 
         /// </summary>
         /// <param name="server"></param>
-        protected void HandleRequest(ServerContext server)
+        protected void HandleRequest(ServerContext server, List<string> commands)
         {
             int i = 0;
-            foreach (string s in server.sb)
+            foreach (string s in commands)
             {
                 try
                 {
@@ -248,7 +213,7 @@ namespace Proxy
                         }
                         else if (message.Type == ResponseType.AllUsers)
                         {
-                            Proxy.broadcastToClients(message);
+                            Proxy.sendToClient(message);
                         }
                         else if (message.Type == ResponseType.Disconnect)
                         {
@@ -257,11 +222,10 @@ namespace Proxy
                         i++;
                     }
                 }
-                catch 
+                catch (Exception e)
                 {
-                    Log.Warn("[PROXY->SERVANT]: Error parsing JSON in GameServer.HandleRequest. JSON: " + server.sb[i]);
+                    Log.Warn("[PROXY->SERVANT]: Error in GameServer.HandleRequest. JSON: " + commands[i] + ". Error is " + e.Message + "\n" +  e.StackTrace);
                     //Log.Error("Error parsing JSON in GameServer.HandleRequest",e);
-                    //Log.Debug(e);
                 }
             }
         }
@@ -304,7 +268,6 @@ namespace Proxy
         /// <returns></returns>
         protected ServerContext PickServer()
         {
-
             PickServerSemaphore.Wait();
             try
             {

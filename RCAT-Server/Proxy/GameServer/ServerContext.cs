@@ -21,9 +21,11 @@ namespace Proxy
         public bool Connected = true;
 
         //public StringBuilder sb = new StringBuilder();
-        public string[] sb = null;
+        //public string[] sb = null;
 
         public bool IsTruncated = false;
+
+        public string leftover { get; set; }
 
         /// <summary>
         /// Maximum number of bytes that can be read at once from the TCP channel 
@@ -31,10 +33,10 @@ namespace Proxy
         public static int BufferSize = 4096;
 
         // buffer storing what has been received from the TCP channel
-        public byte[] Buffer = new byte[BufferSize];
+        public byte[] buffer = new byte[BufferSize];
 
         // buffer that has to be sent through the TCP channel
-        public byte[] SendBuffer = new byte[BufferSize];
+        public byte[] SendBuffer;
 
         public SemaphoreSlim ReceiveReady = new SemaphoreSlim(1);
 
@@ -60,7 +62,8 @@ namespace Proxy
         public void Send(string Data)
         {
             string json = Data + '\0';
-            Send(UTF8Encoding.UTF8.GetBytes(json));
+            SendBuffer = UTF8Encoding.UTF8.GetBytes(json);
+            Send(SendBuffer);
         }
 
         /// <summary>
@@ -71,8 +74,8 @@ namespace Proxy
         {
             try
             {
-                Data.CopyTo(SendBuffer,0);
-                serverConnection.Client.BeginSend(SendBuffer, 0, Data.Length, SocketFlags.None, EndSend, this);
+                //Data.CopyTo(SendBuffer,0);
+                serverConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.None, EndSend, this);
             }
             catch (Exception e)
             {
@@ -122,5 +125,7 @@ namespace Proxy
                 Connected = false;
             }
         }
+
+        
     }
 }
