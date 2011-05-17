@@ -92,9 +92,10 @@ namespace Proxy
             }
             catch (Exception e)
             {
+                // Hack: Java client is throwing weird messages filled with '/0'. Temp fix
                 string test = AContext.DataFrame.ToString();
                 if (test.StartsWith("\0") == false)
-                    Log.Warn("[CLIENT->PROXY]: Error parsing Json into a position in ClientServer.OnReceive, JSON message was: " + AContext.DataFrame.ToString());
+                    Log.Warn("[CLIENT->PROXY]: Error parsing Json into a position in ClientServer.OnReceive, JSON message was: " + AContext.DataFrame.ToString() + ". Error is: " + e.Message + e.StackTrace);
             }
             Proxy.sendSetPositionToServer(me,timestamp); // so far, the messages received only deal with user position updates
 
@@ -138,6 +139,7 @@ namespace Proxy
         {
             string name = (string)broadcast.Data.SelectToken("n");
             UserContext user = Proxy.onlineUsers[name];
+            
             long lastupdate = user.LastUpdate;
             if (broadcast.Type == ResponseType.Disconnect)
                 lastupdate = 0; // Just to be sure it will enter next if
@@ -165,7 +167,9 @@ namespace Proxy
                     }
                 }
             }
-            Proxy.onlineUsers.Remove(name);
+            if (broadcast.Type == ResponseType.Disconnect)
+                Proxy.onlineUsers.Remove(name);
+
             user.SentCounter--;
             if (user.SentCounter < 0)
             {

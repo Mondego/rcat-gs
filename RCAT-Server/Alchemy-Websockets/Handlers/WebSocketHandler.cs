@@ -132,6 +132,7 @@ namespace Alchemy.Server.Handlers
                 //AContext.SendReady.Wait();
                 try
                 {
+                    if (AContext.Connection.Connected)
                     AContext.Connection.Client.BeginSend(WrappedData, 0, WrappedData.Length, SocketFlags.None, ACallback, AContext);
                 }
                 catch
