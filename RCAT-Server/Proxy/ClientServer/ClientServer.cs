@@ -146,21 +146,20 @@ namespace Proxy
                 if (broadcast.Type == ResponseType.Disconnect)
                     lastupdate = 0; // Just to be sure it will enter next if
 
-                user.SentSemaphore.Wait();
+                user.SendingSemaphore.Wait();
                 if (broadcast.TimeStamp >= lastupdate)
                 {
                     user.LastUpdate = broadcast.TimeStamp;
+                    Message m = new Message();
+                    m.Type = broadcast.Type;
+                    m.Data = broadcast.Data;
+
+                    string json = JsonConvert.SerializeObject(m);
                     foreach (string client in broadcast.clients)
                     {
                         try
                         {
                             UserContext cl = Proxy.onlineUsers[client];
-                            Message m = new Message();
-                            m.Type = broadcast.Type;
-                            m.Data = broadcast.Data;
-
-                            string json = JsonConvert.SerializeObject(m);
-
                             cl.Send(json);
                         }
                         catch
@@ -169,23 +168,27 @@ namespace Proxy
                         }
                     }
                 }
+                else
+                    user.LatePackets++;
 
                 if (broadcast.Type == ResponseType.Disconnect)
                 {
                     if (Proxy.onlineUsers.ContainsKey(name))
                         Proxy.onlineUsers.Remove(name);
                 }
-
-                user.SentCounter--;
-                if (user.SentCounter < 0)
+                else
                 {
-                    user.SentCounter = UserContext.DefaultSentCounter;
-                    long timetoprocess = user.TimeToProcess;
-                    LoggingObject logobj = new LoggingObject(lastupdate, user, timetoprocess);
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(LogRoundTrip), logobj);
-                    user.TimeToProcess = DateTime.Now.Ticks;
+                    user.SentCounter--;
+                    if (user.SentCounter < 0 && lastupdate > 0)
+                    {
+                        user.SentCounter = UserContext.DefaultSentCounter;
+                        long timetoprocess = user.TimeToProcess;
+                        LoggingObject logobj = new LoggingObject(lastupdate, user, timetoprocess);
+                        ThreadPool.QueueUserWorkItem(new WaitCallback(LogRoundTrip), logobj);
+                        user.TimeToProcess = DateTime.Now.Ticks;
+                    }
                 }
-                user.SentSemaphore.Release();
+                user.SendingSemaphore.Release();
             }
             catch (Exception e)
             {
@@ -215,7 +218,6 @@ namespace Proxy
 
         static void LogRoundTrip(Object stateInfo)
         {
-            // TODO: Not Thread Safe
             LoggingObject logobj = (LoggingObject)stateInfo;
             UserContext user = logobj.user;
             long lastupdate = logobj.lastupdate;
@@ -223,7 +225,8 @@ namespace Proxy
             long now = DateTime.Now.Ticks;
             long roundtrip = now - lastupdate;
             long timeprocess = now - logobj.timetoprocess;
-            user.RoundtripLog.Append(user.ClientAddress + "\t" + roundtrip.ToString() + "\t" + timeprocess.ToString() + "\n");
+            user.RoundtripLog.Append(user.ClientAddress + "\t" + roundtrip.ToString() + "\t" + timeprocess.ToString() + "\t" + user.LatePackets.ToString() + "\n");
+            user.LatePackets = 0;
 
             
             // Flush every 10 Seconds

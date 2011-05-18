@@ -60,6 +60,10 @@ namespace Alchemy.Server.Classes
         public long TimeToProcess = 0;
 
         /// <summary>
+        /// Number of packets dropped for being late 
+        /// </summary>
+        public int LatePackets = 0;
+        /// <summary>
         /// What character encoding to use.
         /// </summary>
         public UTF8Encoding Encoding = new UTF8Encoding();
@@ -75,12 +79,12 @@ namespace Alchemy.Server.Classes
         /// <summary>
         /// Stores the buffer of data to be flushed to file
         /// </summary>
-        public StringBuilder RoundtripLog = new StringBuilder("Client\tRoundTrip\tTimeToProcess\n");
+        public StringBuilder RoundtripLog = new StringBuilder("Client\tRoundTrip\tTimeToProcess\tLatePackets\n");
 
         /// <summary>
-        /// Semaphore to check if SentCounter reached 0
+        /// Blocks message broadcasting to clients to one message at a time for a single client.
         /// </summary>
-        public SemaphoreSlim SentSemaphore = new SemaphoreSlim(1);
+        public SemaphoreSlim SendingSemaphore = new SemaphoreSlim(1);
 
         /// <summary>
         /// Default value for logging sent values
