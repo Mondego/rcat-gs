@@ -51,7 +51,7 @@ namespace Proxy
             clientListener.DefaultOnSend = new OnEventDelegate(OnSend);
             clientListener.DefaultOnConnect = new OnEventDelegate(OnConnect);
             clientListener.DefaultOnDisconnect = new OnEventDelegate(OnDisconnect);
-            clientListener.TimeOut = new TimeSpan(0, 5, 0);
+            clientListener.TimeOut = new TimeSpan(0, 0, 30);
 
             clientListener.Start();
         }
@@ -83,6 +83,7 @@ namespace Proxy
             long timestamp = DateTime.Now.Ticks;
             User me = new User();
             me.n = AContext.ClientAddress.ToString();
+            AContext.ReceivedPackets++;
             try
             {
                 string json = AContext.DataFrame.ToString();
@@ -225,10 +226,10 @@ namespace Proxy
             long now = DateTime.Now.Ticks;
             long roundtrip = now - lastupdate;
             long timeprocess = now - logobj.timetoprocess;
-            user.RoundtripLog.Append(user.ClientAddress + "\t" + roundtrip.ToString() + "\t" + timeprocess.ToString() + "\t" + user.LatePackets.ToString() + "\n");
+            user.RoundtripLog.Append(user.ClientAddress + "\t" + roundtrip.ToString() + "\t" + timeprocess.ToString() + "\t" + user.LatePackets.ToString() + "\t" + user.ReceivedPackets + "\n");
             user.LatePackets = 0;
+            user.ReceivedPackets = 0;
 
-            
             // Flush every 10 Seconds
             if (now - Proxy.startTime > 100000)
             {

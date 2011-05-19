@@ -63,6 +63,12 @@ namespace Alchemy.Server.Classes
         /// Number of packets dropped for being late 
         /// </summary>
         public int LatePackets = 0;
+
+        /// <summary>
+        /// Number of packets received in DefaultSentCounter interval
+        /// </summary>
+        public int ReceivedPackets = 0;
+
         /// <summary>
         /// What character encoding to use.
         /// </summary>
@@ -79,7 +85,7 @@ namespace Alchemy.Server.Classes
         /// <summary>
         /// Stores the buffer of data to be flushed to file
         /// </summary>
-        public StringBuilder RoundtripLog = new StringBuilder("Client\tRoundTrip\tTimeToProcess\tLatePackets\n");
+        public StringBuilder RoundtripLog = new StringBuilder("Client\tRoundTrip\tTimeToProcess\tLatePackets\tPackets\n");
 
         /// <summary>
         /// Blocks message broadcasting to clients to one message at a time for a single client.

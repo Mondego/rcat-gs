@@ -155,7 +155,8 @@ namespace Alchemy.Server.Handlers
                     try
                     {
                         AContext.Connection.Client.EndSend(AResult);
-                        AContext.UserContext.OnSend();
+                        // SKIPPING ONSEND in ClientServer, no need for it.
+                        //AContext.UserContext.OnSend();
                         //AContext.SendReady.Release();
                     }
                     catch (Exception e)
@@ -167,7 +168,7 @@ namespace Alchemy.Server.Handlers
             }
             catch
             {
-                
+                // Very common in disconnections, lets not do anything.
             }
         }
 
@@ -188,7 +189,8 @@ namespace Alchemy.Server.Handlers
                 Console.WriteLine("[WebSocketHandler]: Exception end send close");
                //AContext.SendReady.Release();
             }
-            AContext.UserContext.OnSend();
+            // Skipping, performance reasons. 
+            //AContext.UserContext.OnSend();
             AContext.Dispose();
         }
 
