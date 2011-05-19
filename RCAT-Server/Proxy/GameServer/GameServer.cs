@@ -133,10 +133,11 @@ namespace Proxy
                         }
                     }
                     catch {
-                        Log.Error("[PROXY->SERVANT]: Game Server Forcefully Disconnected 1."); 
+                        Log.Error("[PROXY->SERVANT]: Game Server Forcefully Disconnected 1.");
+                        onlineServers.Remove(SContext);
                     }
                 }
-                //at this point, the connexion with the servant has been lost, therefore ServerContext.Dispose() is called (because end of the using(){} block). 
+                //at this point, the connection with the servant has been lost, therefore ServerContext.Dispose() is called (because end of the using(){} block). 
             }
         }
 
@@ -182,6 +183,7 @@ namespace Proxy
                 else
                 {
                     // What do we do if lose connection to RCAT?
+                    onlineServers.Remove(SContext);
                     SContext.Dispose();
                 }
             }
@@ -268,22 +270,22 @@ namespace Proxy
         /// <returns></returns>
         protected ServerContext PickServer()
         {
+            ServerContext server = null;
             PickServerSemaphore.Wait();
             try
             {
-                ServerContext server = onlineServers[roundrobin];
+                server = onlineServers[roundrobin];
                 roundrobin++;
                 if (roundrobin >= onlineServers.Count)
                     roundrobin = 0;
-                PickServerSemaphore.Release();
-                return server;
             }
             catch (Exception e)
             {
                 Log.Error("Error in PickServer. Roundrobin is: " + roundrobin.ToString() + ", onlinservers length is " + onlineServers.Count.ToString(), e);
+                roundrobin = 0;
             }
             PickServerSemaphore.Release();
-            return null;
+            return server;
         }
 
         /// <summary>

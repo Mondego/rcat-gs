@@ -13,7 +13,15 @@ namespace RCAT
     {
 
         public String connStr = "server="+Properties.Settings.Default.mysql_server+";user="+Properties.Settings.Default.mysql_user+";database="+Properties.Settings.Default.mysql_database+";port="+Properties.Settings.Default.mysql_port+";password="+Properties.Settings.Default.mysql_pass+";";
-        
+        public String newTable = @"CREATE TABLE `users` (
+  `name` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `top` int(11) NOT NULL DEFAULT '0',
+  `left` int(11) NOT NULL DEFAULT '0',
+  `z` int(11) NOT NULL DEFAULT '0',
+  `timestamp` bigint(20) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
         public override void Connect()
         {
             MySqlConnection conn = new MySqlConnection(connStr);
@@ -21,10 +29,12 @@ namespace RCAT
             {
                 Console.WriteLine("Connecting to MySQL...");
                 conn.Open();
-                string sql = string.Format("DELETE FROM users");
+                string sql = string.Format("DROP TABLE users");
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 // Perform databse operations
+                MySqlCommand cmd2 = new MySqlCommand(newTable, conn);
+                cmd2.ExecuteNonQuery();
             }
             catch (Exception ex)
             {
@@ -48,8 +58,8 @@ namespace RCAT
                 ulong name = IPStringToulong(userName);
                 // MySQL silently drops insert/update query if no new changes are made to the rows
                 string sql = string.Format("INSERT INTO users (`name`, `top`, `left`,`timestamp`,`z`) VALUES ({0}, {1}, {2}, {3}, {4}) "+
-                "ON DUPLICATE KEY UPDATE `top`=IF(timestamp < VALUES(timestamp), {1}, `top`)," +
-                "`left`=IF(timestamp < VALUES(timestamp), {2}, `left`),`timestamp`=IF(timestamp < VALUES(timestamp), {3},`timestamp`),`z`=IF(timestamp < VALUES(timestamp), {4}, `z`)", name, pos.t.ToString(), pos.l.ToString(), newstamp.ToString(), pos.z.ToString());
+                "ON DUPLICATE KEY UPDATE `top`=IF(timestamp <= VALUES(timestamp), {1}, `top`)," +
+                "`left`=IF(timestamp < VALUES(timestamp), {2}, `left`),`timestamp`=IF(timestamp <= VALUES(timestamp), {3},`timestamp`),`z`=IF(timestamp <= VALUES(timestamp), {4}, `z`)", name, pos.t.ToString(), pos.l.ToString(), newstamp.ToString(), pos.z.ToString());
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 

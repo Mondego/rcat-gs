@@ -105,12 +105,6 @@ namespace Proxy
         //protected static IList<User> OnlineUsers = new List<User>();
         public static Dictionary<String, UserContext> onlineUsers = new Dictionary<string, UserContext>();
 
-        /// <summary>
-        /// Store the list of servers
-        /// </summary>
-        /// <param name="args"></param>
-        public static Dictionary<String, UserContext> onlineServers = new Dictionary<string, UserContext>();
-
         static void Main(string[] args)
         {
             SetUpLogging();
