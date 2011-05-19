@@ -29,7 +29,7 @@ namespace RCAT
             {
                 Console.WriteLine("Connecting to MySQL...");
                 conn.Open();
-                string sql = string.Format("DROP TABLE users");
+                string sql = string.Format("DROP TABLE IF EXISTS users");
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 // Perform databse operations
