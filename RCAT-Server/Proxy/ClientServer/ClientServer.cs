@@ -180,7 +180,7 @@ namespace Proxy
                 else
                 {
                     user.SentCounter--;
-                    if (user.SentCounter < 0 && lastupdate > 0)
+                    if (user.SentCounter <= 0 && lastupdate > 0)
                     {
                         user.SentCounter = UserContext.DefaultSentCounter;
                         long timetoprocess = user.TimeToProcess;
