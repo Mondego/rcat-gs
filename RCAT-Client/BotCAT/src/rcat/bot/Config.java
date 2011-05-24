@@ -8,6 +8,8 @@ public class Config {
 	public static int NUM_BOTS;
 	public static int NUM_MSG;
 	public static int FREQ;
+	public static int SLEEP_CLOSE;
+	public static int DELAY_BOTS; 
 
 	static {
 		Properties prop = new Properties();
@@ -20,7 +22,9 @@ public class Config {
 		SERVER_ADDR = prop.getProperty("server.addr");
 		NUM_BOTS = Integer.parseInt(prop.getProperty("num.bots"));
 		NUM_MSG = Integer.parseInt(prop.getProperty("num.msg"));
+		DELAY_BOTS = Integer.parseInt(prop.getProperty("delay.between.bots"));
 		FREQ = Integer.parseInt(prop.getProperty("freq"));
+		SLEEP_CLOSE = Integer.parseInt(prop.getProperty("bot.sleep.before.close"));
 
 	}
 }

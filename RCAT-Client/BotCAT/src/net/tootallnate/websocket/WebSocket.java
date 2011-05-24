@@ -128,7 +128,7 @@ public final class WebSocket {
 			this.buffer.rewind();
 
 			if (!this.handshakeComplete) {
-				recieveHandshake();
+				receiveHandshake();
 			} else {
 				receiveFrame();
 			}
@@ -235,7 +235,7 @@ public final class WebSocket {
 		}
 	}
 
-	private void recieveHandshake() throws IOException, NoSuchAlgorithmException {
+	private void receiveHandshake() throws IOException, NoSuchAlgorithmException {
 		ByteBuffer ch = ByteBuffer.allocate((this.remoteHandshake != null ? this.remoteHandshake.capacity() : 0) + this.buffer.capacity());
 		if (this.remoteHandshake != null) {
 			this.remoteHandshake.rewind();
@@ -304,7 +304,7 @@ public final class WebSocket {
 		byte[] handshakeBytes = this.remoteHandshake.array();
 		String handshake = new String(handshakeBytes, UTF8_CHARSET);
 		this.handshakeComplete = true;
-		if (this.wsl.onHandshakeRecieved(this, handshake, handShakeBody)) {
+		if (this.wsl.onHandshakeReceived(this, handshake, handShakeBody)) {
 			this.wsl.onOpen(this);
 		} else {
 			close();

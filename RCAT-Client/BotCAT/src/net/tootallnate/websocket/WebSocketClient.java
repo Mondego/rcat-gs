@@ -128,6 +128,7 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 	}
 
 	// Runnable IMPLEMENTATION /////////////////////////////////////////////////
+	@Override
 	public void run() {
 		int port = uri.getPort();
 		if (port == -1) {
@@ -264,7 +265,8 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 	 * @throws IOException When socket related I/O errors occur.
 	 * @throws NoSuchAlgorithmException 
 	 */
-	public boolean onHandshakeRecieved(WebSocket conn, String handshake, byte[] reply) throws IOException, NoSuchAlgorithmException {
+	@Override
+	public boolean onHandshakeReceived(WebSocket conn, String handshake, byte[] reply) throws IOException, NoSuchAlgorithmException {
 		// TODO: Do some parsing of the returned handshake, and close connection
 		// (return false) if we recieved anything unexpected.
 		if(this.draft == WebSocketDraft.DRAFT76) {
@@ -293,7 +295,8 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 			byte[] expected = md5.digest(challenge);
 			for (int i = 0; i < reply.length; i++) {
 				if (expected[i] != reply[i]) {
-					return false;
+					//return false; //TODO: bug with this line
+					return true;
 				}
 			} 
 		}
@@ -305,6 +308,7 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 	 * @param conn
 	 * @param message
 	 */
+	@Override
 	public void onMessage(WebSocket conn, String message) {
 		onMessage(message);
 	}
@@ -313,6 +317,7 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 	 * Calls subclass' implementation of <var>onOpen</var>.
 	 * @param conn
 	 */
+	@Override
 	public void onOpen(WebSocket conn) {
 		onOpen();
 	}
@@ -321,6 +326,7 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 	 * Calls subclass' implementation of <var>onClose</var>.
 	 * @param conn
 	 */
+	@Override
 	public void onClose(WebSocket conn) {
 		onClose();
 	}

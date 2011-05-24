@@ -15,16 +15,27 @@ class Bot extends WebSocketClient {
 	int top;
 	int left;
 	Random r;
-	static int TOP_SHIFT = 4;
-	static int LEFT_SHIFT = 8; // these 2 values depend on the screen to look at them. In our case, canvas in browser 
+	static int TOP_SHIFT = 1;
+	static int LEFT_SHIFT = 2; // these 2 values depend on the screen to look at them. In our case, canvas in browser 
 	static int MAXTOP = 140;
 	static int MAXLEFT = 290;
 	long millisOrigin = 0; //time origin for the experiments
+	int posToGoTo = 0;
 
+	/**
+	 * create bot with URL=chateau.ics.uci.edu that sends only one msg
+	 * @throws URISyntaxException
+	 */
 	public Bot() throws URISyntaxException {
 		this(new URI("ws://chateau.ics.uci.edu:81/websocket"), 1, 1000);
 	}
 
+	/**
+	 * create bot with URL=chateau.ics.uci.edu 
+	 * @param counter
+	 * @param freq
+	 * @throws URISyntaxException
+	 */
 	public Bot(int counter, int freq) throws URISyntaxException {
 		this(new URI("ws://chateau.ics.uci.edu:81/websocket"), counter, freq);
 	}
@@ -38,7 +49,7 @@ class Bot extends WebSocketClient {
 	public Bot(URI uri, int counter, int freq) {
 		super(uri);
 		this.counter = counter;
-		this.freq = freq;
+		this.freq = freq; 
 	}
 
 	/**
@@ -53,28 +64,14 @@ class Bot extends WebSocketClient {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		/*
-		synchronized(this) {
-			try {
-				wait(this.freq);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		*/
 		// change position and send new one to server
 		try {
-			int posToGoTo = r.nextInt(4);
+			//posToGoTo = r.nextInt(2);
 			// just checking that bot stays within visual range of screen 
 			if(this.top <= 0)
 				posToGoTo = 1;
 			if(this.top >= MAXTOP)
 				posToGoTo = 0;
-			if(this.left <= 0)
-				posToGoTo = 2;
-			if(this.left >= MAXLEFT)
-				posToGoTo = 3;	
 			// actually move
 			switch(posToGoTo) {
 			case 0: //up
@@ -126,7 +123,7 @@ class Bot extends WebSocketClient {
 	 */
 	public void startSendingPos() {
 		long tid = Thread.currentThread().getId();
-		botPrint("RNG seed = " + tid);
+		//botPrint("RNG seed = " + tid);
 		r = new Random(tid);
 		this.top = r.nextInt(MAXTOP);
 		this.left = r.nextInt(MAXLEFT);
@@ -135,7 +132,7 @@ class Bot extends WebSocketClient {
 			waitThenMove();
 		}
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(Config.SLEEP_CLOSE);
 		} catch (InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
