@@ -14,6 +14,7 @@ public class ChatServer extends WebSocketServer {
 		super(port);
 	}
 
+	@Override
 	public void onClientOpen(WebSocket conn) {
 		try {
 			this.sendToAll(conn + " entered the room!");
@@ -23,6 +24,7 @@ public class ChatServer extends WebSocketServer {
 		System.out.println(conn + " entered the room!");
 	}
 
+	@Override
 	public void onClientClose(WebSocket conn) {
 		try {
 			this.sendToAll(conn + " has left the room!");
@@ -32,6 +34,7 @@ public class ChatServer extends WebSocketServer {
 		System.out.println(conn + " has left the room!");
 	}
 
+	@Override
 	public void onClientMessage(WebSocket conn, String message) {
 		try {
 			this.sendToAll(conn + ": " + message);

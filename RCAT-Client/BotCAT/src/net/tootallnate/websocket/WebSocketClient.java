@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -166,6 +167,7 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 					i.remove();
 
 					// When 'conn' has connected to the host
+					try {
 					if (key.isConnectable()) {
 
 						// Ensure connection is finished
@@ -202,9 +204,14 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 						}
 					}
 
+
 					// When 'conn' has recieved some data
 					if (key.isReadable()) {
 						conn.handleRead();
+					}
+					}
+					catch (CancelledKeyException e) { // cf the handshake problem ...
+						//e.printStackTrace(); 
 					}
 				}
 			} catch (IOException ex) {
@@ -244,9 +251,9 @@ public abstract class WebSocketClient implements Runnable, WebSocketListener {
 			key = new StringBuilder(key).insert(position, randChar).toString();
 		}
 		for (int i = 0; i < spaces; i++){
-			if(key.length() - 1 <= 0)
-				System.out.println("bleh");
-			int position = r.nextInt(key.length() - 1) + 1;
+			int position = 1;
+			if(key.length() - 1 > 0)
+				position = r.nextInt(key.length() - 1) + 1;
 			position = Math.abs(position);
 			key = new StringBuilder(key).insert(position,"\u0020").toString();
 		}

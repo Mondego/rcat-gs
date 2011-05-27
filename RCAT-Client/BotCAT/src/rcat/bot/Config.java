@@ -10,7 +10,12 @@ public class Config {
 	public static int FREQ;
 	public static int SLEEP_CLOSE;
 	public static int DELAY_BOTS; 
-
+	public static int TOP_SHIFT;
+	public static int LEFT_SHIFT; // these 2 values depend on the screen to look at them. In our case, canvas in browser 
+	public static int MAX_TOP;
+	public static int MAX_LEFT;
+	public static int SLEEP_START;
+	
 	static {
 		Properties prop = new Properties();
 		try {
@@ -25,6 +30,13 @@ public class Config {
 		DELAY_BOTS = Integer.parseInt(prop.getProperty("delay.between.bots"));
 		FREQ = Integer.parseInt(prop.getProperty("freq"));
 		SLEEP_CLOSE = Integer.parseInt(prop.getProperty("bot.sleep.before.close"));
+		TOP_SHIFT = Integer.parseInt(prop.getProperty("top.shift"));
+		LEFT_SHIFT = Integer.parseInt(prop.getProperty("left.shift"));
+		MAX_TOP = Integer.parseInt(prop.getProperty("max.top"));
+		MAX_LEFT = Integer.parseInt(prop.getProperty("max.left"));
+		SLEEP_START = Integer.parseInt(prop.getProperty("bot.sleep.before.start"));
+		
+		
 
 	}
 }

@@ -28,14 +28,17 @@ public class ChatClient extends WebSocketClient {
 		this.ta = ta;
 	}
 
+	@Override
 	public void onMessage(String message) {
 		ta.append(message + "\n");
 	}
 
+	@Override
 	public void onOpen() {
 		ta.append("You are connected to ChatServer: " + getURI() + "\n");
 	}
 
+	@Override
 	public void onClose() {
 		ta.append("You have been disconnected from: " + getURI() + "\n");
 	}
@@ -84,7 +87,7 @@ public class ChatClient extends WebSocketClient {
 			chatField.addActionListener(this);
 			c.add(chatField);
 
-			java.awt.Dimension d = new java.awt.Dimension(300, 400);
+			java.awt.Dimension d = new java.awt.Dimension(400, 600);
 			setPreferredSize(d);
 			setSize(d);
 
@@ -104,6 +107,7 @@ public class ChatClient extends WebSocketClient {
 			setVisible(true);
 		}
 
+		@Override
 		public void actionPerformed(ActionEvent e) {
 
 			if (e.getSource() == chatField) {
@@ -136,12 +140,21 @@ public class ChatClient extends WebSocketClient {
 			}
 		}
 	}
-
+	// end of Frame private class
+	
+	public void run() {
+		new Frame();
+	}
+	
+	/*
 	public static void main(String[] args) {
+		
 		java.awt.EventQueue.invokeLater(new Runnable() {
+			@Override
 			public void run() {
 				new Frame();
 			}
 		});
 	}
+*/
 }

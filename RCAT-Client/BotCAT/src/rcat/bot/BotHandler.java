@@ -57,13 +57,14 @@ class Bot extends WebSocketClient {
 	 * @param time
 	 */
 	public void waitThenMove() {
-		try {
+	/*	try {
 			botPrint("Sleeping for " + this.freq + " ms");
 			Thread.sleep(this.freq);
 		} catch (InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		*/
 		// change position and send new one to server
 		try {
 			//posToGoTo = r.nextInt(2);
@@ -131,13 +132,14 @@ class Bot extends WebSocketClient {
 			counter --;
 			waitThenMove();
 		}
+		/*
 		try {
 			Thread.sleep(Config.SLEEP_CLOSE);
 		} catch (InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+		*/
 		try {
 			close();
 		} catch (IOException e) {
