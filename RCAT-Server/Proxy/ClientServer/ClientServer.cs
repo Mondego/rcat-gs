@@ -141,8 +141,14 @@ namespace Proxy
             try
             {
                 string name = (string)broadcast.Data.SelectToken("n");
-                UserContext user = Proxy.onlineUsers[name];
-
+                UserContext user = null;
+                if (Proxy.onlineUsers.ContainsKey(name))
+                    user = Proxy.onlineUsers[name];
+                else
+                {
+                    Log.Debug("User " + name + " not present in this Proxy");
+                    return;
+                }
                 long lastupdate = user.LastUpdate;
                 if (broadcast.Type == ResponseType.Disconnect)
                     lastupdate = 0; // Just to be sure it will enter next if

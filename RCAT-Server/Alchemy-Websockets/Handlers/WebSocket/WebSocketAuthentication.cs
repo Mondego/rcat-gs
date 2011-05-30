@@ -96,7 +96,11 @@ namespace Alchemy.Server.Handlers.WebSocket
             string KeyNumberString = new String(AKey.Where(x => Char.IsDigit(x)).ToArray());
 
             // Divide the number with the number of spaces
-            Int32 KeyResult = (Int32)(Int64.Parse(KeyNumberString) / KeySpaceCount);
+            Int32 KeyResult;
+            if (KeySpaceCount == 0)
+                KeyResult = (Int32)(Int64.Parse(KeyNumberString));
+            else
+                KeyResult = (Int32)(Int64.Parse(KeyNumberString) / KeySpaceCount);
 
             // convert the results to 32 bit big endian byte arrays
             byte[] KeyResultBytes = BitConverter.GetBytes(KeyResult);
