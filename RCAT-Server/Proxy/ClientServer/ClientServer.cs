@@ -176,7 +176,11 @@ namespace Proxy
                     }
                 }
                 else
+                {
                     user.LatePackets++;
+                    user.SendingSemaphore.Release();
+                    return;
+                }
 
                 if (broadcast.Type == ResponseType.Disconnect)
                 {
@@ -190,7 +194,7 @@ namespace Proxy
                     {
                         user.SentCounter = UserContext.DefaultSentCounter;
                         long timetoprocess = user.TimeToProcess;
-                        LoggingObject logobj = new LoggingObject(lastupdate, user, timetoprocess);
+                        LoggingObject logobj = new LoggingObject(broadcast.TimeStamp, user, timetoprocess);
                         ThreadPool.QueueUserWorkItem(new WaitCallback(LogRoundTrip), logobj);
                         user.TimeToProcess = DateTime.Now.Ticks;
                     }
@@ -232,7 +236,7 @@ namespace Proxy
             long now = DateTime.Now.Ticks;
             long roundtrip = now - lastupdate;
             long timeprocess = now - logobj.timetoprocess;
-            user.RoundtripLog.Append(user.ClientAddress + "\t" + roundtrip.ToString() + "\t" + timeprocess.ToString() + "\t" + user.LatePackets.ToString() + "\t" + user.ReceivedPackets + "\n");
+            user.RoundtripLog.Append(user.ClientAddress + "\t" + (roundtrip/10000).ToString() + "\t" + (timeprocess/10000).ToString() + "\t" + user.LatePackets.ToString() + "\t" + user.ReceivedPackets + "\n");
             user.LatePackets = 0;
             user.ReceivedPackets = 0;
 

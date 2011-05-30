@@ -114,6 +114,13 @@ namespace Proxy
             Console.WriteLine("Proxy up and running. Type 'exit' to terminate it.");
             LogConfigFile = "Proxy.config";
             LoggerName = "Proxy.Log";
+            string RoundTripLogName = Properties.Settings.Default.log_roundtrip;
+
+            String RoundtripLog = "Client\tRoundTrip\tTimeToProcess\tLatePackets\tPackets\n";
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@"C:\Temp\" + RoundTripLogName, true))
+            {
+                file.Write(RoundtripLog);
+            }
 
             string Command = string.Empty;
             while (Command != "exit")

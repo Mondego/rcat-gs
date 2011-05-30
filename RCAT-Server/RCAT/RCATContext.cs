@@ -21,7 +21,6 @@ namespace RCAT
         public string leftover = "";
         public byte[] buffer = new byte[DefaultBufferSize];
         public TcpClient proxyConnection;
-        //public ServerMessage message;
         public SemaphoreSlim ReceiveReady = new SemaphoreSlim(1);
         public bool IsTruncated = false;
 
@@ -53,17 +52,12 @@ namespace RCAT
             AsyncCallback ACallback = EndSend;
             try
             {
-                SocketFlags sf = (Data.Length > RCATContext.DefaultBufferSize) ? SocketFlags.Truncated : SocketFlags.None;
-                proxyConnection.Client.BeginSend(Data, 0, Data.Length, sf, ACallback, this);
-                //if (Data.Length > RCATContext.DefaultBufferSize)
-                //    proxyConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.Truncated, ACallback, this);
-                //else
-                //    proxyConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.None, ACallback, this);
+                //SocketFlags sf = (Data.Length > RCATContext.DefaultBufferSize) ? SocketFlags.Truncated : SocketFlags.None;
+                proxyConnection.Client.BeginSend(Data, 0, Data.Length, SocketFlags.None, ACallback, this);
             }
-            catch
+            catch (Exception e)
             {
-                RCAT.Log.Warn("[ServerContext]: Exception sending");
-                //AContext.SendReady.Release();
+                RCAT.Log.Warn("[RCATContext]: Exception sending.",e);
             }
         }
 
@@ -78,18 +72,17 @@ namespace RCAT
             try
             {
                 RContext.proxyConnection.Client.EndSend(AResult);
-                //AContext.SendReady.Release();
             }
-            catch
+            catch (Exception e)
             {
-                RCAT.Log.Warn("[ServerContext]: Exception end send");
-                //AContext.SendReady.Release(); 
+                RCAT.Log.Warn("[RCATContext]: Exception end send.",e);
             }
         }
 
         public void Dispose()
         {
-
+            proxyConnection.Close();
+            proxyConnection = null;
         }
     }
 }
