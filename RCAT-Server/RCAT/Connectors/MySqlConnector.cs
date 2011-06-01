@@ -12,8 +12,9 @@ namespace RCAT
     class MySqlConnector : DataConnector
     {
 
+        public static String userTableName = "users";
         public String connStr = "server="+Properties.Settings.Default.mysql_server+";user="+Properties.Settings.Default.mysql_user+";database="+Properties.Settings.Default.mysql_database+";port="+Properties.Settings.Default.mysql_port+";password="+Properties.Settings.Default.mysql_pass+";";
-        public String newTable = @"CREATE TABLE `users` (
+        public String newTable = @"CREATE TABLE `"+ userTableName + @"` (
   `name` bigint(20) unsigned NOT NULL DEFAULT '0',
   `top` int(11) NOT NULL DEFAULT '0',
   `left` int(11) NOT NULL DEFAULT '0',
@@ -29,7 +30,7 @@ namespace RCAT
             {
                 Console.WriteLine("Connecting to MySQL...");
                 conn.Open();
-                string sql = string.Format("DROP TABLE IF EXISTS users");
+                string sql = string.Format("DROP TABLE IF EXISTS " + userTableName);
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
                 // Perform databse operations
@@ -57,7 +58,7 @@ namespace RCAT
                 conn.Open();
                 ulong name = IPStringToulong(userName);
                 // MySQL silently drops insert/update query if no new changes are made to the rows
-                string sql = string.Format("INSERT INTO users (`name`, `top`, `left`,`timestamp`,`z`) VALUES ({0}, {1}, {2}, {3}, {4}) "+
+                string sql = string.Format("INSERT INTO " + userTableName + @" (`name`, `top`, `left`,`timestamp`,`z`) VALUES ({0}, {1}, {2}, {3}, {4}) " +
                 "ON DUPLICATE KEY UPDATE `top`=IF(timestamp <= VALUES(timestamp), {1}, `top`)," +
                 "`left`=IF(timestamp < VALUES(timestamp), {2}, `left`),`timestamp`=IF(timestamp <= VALUES(timestamp), {3},`timestamp`),`z`=IF(timestamp <= VALUES(timestamp), {4}, `z`)", name, pos.t.ToString(), pos.l.ToString(), newstamp.ToString(), pos.z.ToString());
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
@@ -79,7 +80,7 @@ namespace RCAT
             {
                 conn.Open();
 
-                string sql = "SELECT COUNT(*) FROM users";
+                string sql = "SELECT COUNT(*) FROM " + userTableName;
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 result = cmd.ExecuteScalar();
             }
@@ -102,7 +103,7 @@ namespace RCAT
             {
                 conn.Open();
                 ulong name = IPStringToulong(userName);
-                string sql = string.Format("DELETE FROM users WHERE name = {0}", name);
+                string sql = string.Format("DELETE FROM " + userTableName + @" WHERE name = {0}", name);
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 MySqlDataReader rdr = cmd.ExecuteReader();
             }
@@ -122,7 +123,7 @@ namespace RCAT
             {
                 conn.Open();
                 ulong name = IPStringToulong(userName);
-                string sql = string.Format("SELECT * FROM users WHERE name = {0}", name);
+                string sql = string.Format("SELECT * FROM " + userTableName + @" WHERE name = {0}", name);
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 MySqlDataReader rdr = cmd.ExecuteReader();
                 user = new User();
@@ -154,7 +155,7 @@ namespace RCAT
                 int i = 0;
                 allUsers = new string[count];
 
-                string sql = "SELECT `name` FROM users";
+                string sql = "SELECT `name` FROM " + userTableName;
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 MySqlDataReader rdr = cmd.ExecuteReader();
 
@@ -185,7 +186,7 @@ namespace RCAT
                 int i = 0;
                 allUsers = new User[count];
 
-                string sql = "SELECT `name`,`top`,`left`,`z` FROM users";
+                string sql = "SELECT `name`,`top`,`left`,`z` FROM " + userTableName;
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 MySqlDataReader rdr = cmd.ExecuteReader();
 
