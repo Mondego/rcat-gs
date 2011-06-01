@@ -95,7 +95,7 @@ namespace Alchemy.Server
         /// TimeOut : How long until a connection drops when it doesn't receive anything.
         /// MaxPingsInSequence : A multiple of TimeOut for how long a connection can remain idle(only pings received) before we kill it.
         /// </summary>
-        public TimeSpan TimeOut = TimeSpan.FromMinutes(1);
+        public TimeSpan TimeOut = TimeSpan.FromMinutes(10);
         public int MaxPingsInSequence = 0;
 
         /// <summary>

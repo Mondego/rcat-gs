@@ -51,7 +51,7 @@ namespace Proxy
             clientListener.DefaultOnSend = new OnEventDelegate(OnSend);
             clientListener.DefaultOnConnect = new OnEventDelegate(OnConnect);
             clientListener.DefaultOnDisconnect = new OnEventDelegate(OnDisconnect);
-            clientListener.TimeOut = new TimeSpan(0, 0, 30);
+            clientListener.TimeOut = new TimeSpan(0, 10, 0); //Clients get kicked out if they do not send anything for 10 minutes
 
             clientListener.Start();
         }

@@ -35,11 +35,12 @@
 
 <div id="connectAndLogBoxes">
 	<div id="connectBox">
-		Server: <input id="serverUrl" value="ws://opensim.ics.uci.edu:81/websocket"/>
+		Server: <input id="serverUrl" value="ws://chateau.ics.uci.edu:81/websocket"/>
 		<button id="connect" style="display:none">Connect</button>
 		<button id="disconnect">Disconnect</button>
 		<button id="cancelNPC">Take Control!</button>
 		<button id="activateNPC" style="display:none">Give Control!</button>
+		<span id="numPlayersBox">0</span> players connected
 	</div>
 	<div id="chatLog"></div>
 </div>
@@ -64,11 +65,12 @@ var MAXLEFT = 300;
 var mypos = {top:20, left:Math.floor(Math.random()*MAXLEFT), z:1337};
 var socket;
 var FPS_DELAY = 20; //1000/20 = 50 fps
-var NPC_DELAY = 10; //delay between 2 actions from the bot in ms
-
+var NPC_DELAY = 50; //delay between 2 actions from the bot in ms
+var numPlayers = 0;
 
 // print feedback in log window
 function log(txt){
+	/*
 	var now = new Date();
 	var mins = now.getMinutes();
 	var secs = now.getSeconds();
@@ -78,6 +80,7 @@ function log(txt){
 	secs = secs < 10 ? ("0"+secs) : secs;
 	msecs = msecs > 99 ? msecs : (msecs > 9 ? "0"+msecs : "00"+msecs);
 	$('#chatLog').prepend(now.getHours() + ":" + mins + ":" + secs + ":" + msecs + " - " + txt + "<br/>");
+	*/
 }
 
 
@@ -101,7 +104,6 @@ function connect(){
 			fpsTimer = setInterval(draw, FPS_DELAY);
 		}
 		socket.onmessage = function(rawmsg){
-			//log('Received: '+rawmsg.data +' (socket.onmsg)');	
 			log('Received: ' + rawmsg.data);
 			var msg = JSON.parse(rawmsg.data);
 			switch(msg.Type) {
@@ -179,7 +181,9 @@ function iMoved(dir) {
 // when I logout, remove all users and close connection
 function disconnect() {
 	clearInterval(npcTimer);
-	removeAllUsers();
+	usersTable.clear();
+	numPlayers = 0;
+	document.getElementById("numPlayersBox").innerHTML = numPlayers;
 	socket.close();
 	log('Connection closed. Socket Status: ' + socket.readyState);
 	document.onkeypress = null;
@@ -194,6 +198,8 @@ function receivePos(name, top, left){
 	else { //new user to draw
 		var userCoords = {"top":top, "left":left}; //JSON storage
 		usersTable.put(name, userCoords);
+		numPlayers ++;
+		document.getElementById("numPlayersBox").innerHTML = numPlayers;
 	}
 }
 
@@ -217,14 +223,11 @@ function sendPos(){
 
 //when another user disconnects, remove him from the screen and my user list
 function userDisconnected(name) {
-	usersTable.remove(name)
+	usersTable.remove(name);
+	numPlayers --;
+	document.getElementById("numPlayersBox").innerHTML = numPlayers;
 }
 
-
-// remove any user's avatar that could have sneaked in between close() (state 2) and onclose (state 3)
-function removeAllUsers() {
-	usersTable.clear();
-}
 
 // ==================== GRAPHICS ========================
 

@@ -332,10 +332,13 @@ namespace Alchemy.Server.Classes
         {
             try
             {
-                Connection.Client.Close();
-                Connection = null;
+                if (Connection != null)
+                {
+                    Connection.Client.Close();
+                    Connection = null;
+                }
             }
-            catch (Exception e) { Server.Log.Debug("Client Already Disconnected", e); }
+            catch (Exception e) { Server.Log.Debug("[USERCONTEXT] Client Already Disconnected.", e); }
             finally
             {
                 if (Connected)

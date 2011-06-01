@@ -64,7 +64,7 @@ namespace RCAT
 
         protected static string _PROXYURL = Properties.Settings.Default.proxyurl;
 
-        public static TimeSpan TimeOut = new TimeSpan(0, 0, 30);
+        public static TimeSpan TimeOut = new TimeSpan(0, 30, 0);
 
         /// <summary>
         /// Sets the name of the logger.
