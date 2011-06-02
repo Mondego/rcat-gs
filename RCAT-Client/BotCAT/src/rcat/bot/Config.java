@@ -15,7 +15,10 @@ public class Config {
 	public static int MAX_TOP;
 	public static int MAX_LEFT;
 	public static int SLEEP_START;
-	
+	public static String LOG_FILE;
+	public static int FLUSH_FREQ;
+	public static int LOG_FREQ;
+	public static int MACHINE_SEED;
 	static {
 		Properties prop = new Properties();
 		try {
@@ -35,7 +38,10 @@ public class Config {
 		MAX_TOP = Integer.parseInt(prop.getProperty("max.top"));
 		MAX_LEFT = Integer.parseInt(prop.getProperty("max.left"));
 		SLEEP_START = Integer.parseInt(prop.getProperty("bot.sleep.before.start"));
-		
+		LOG_FILE = prop.getProperty("log.file");
+		FLUSH_FREQ = Integer.parseInt(prop.getProperty("flush.freq"));
+		LOG_FREQ = Integer.parseInt(prop.getProperty("log.freq"));
+		MACHINE_SEED = Integer.parseInt(prop.getProperty("machine.seed"));
 		
 
 	}

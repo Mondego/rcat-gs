@@ -128,9 +128,9 @@ public final class WebSocket {
 			this.buffer.rewind();
 
 			if (!this.handshakeComplete) {
-				receiveHandshake();
+				recieveHandshake();
 			} else {
-				receiveFrame();
+				recieveFrame();
 			}
 		}
 	}
@@ -209,7 +209,7 @@ public final class WebSocket {
 	}
 
 	// PRIVATE INSTANCE METHODS ////////////////////////////////////////////////
-	private void receiveFrame() {
+	private void recieveFrame() {
 		byte newestByte = this.buffer.get();
 
 		if (newestByte == START_OF_FRAME) { // Beginning of Frame
@@ -235,7 +235,7 @@ public final class WebSocket {
 		}
 	}
 
-	private void receiveHandshake() throws IOException, NoSuchAlgorithmException {
+	private void recieveHandshake() throws IOException, NoSuchAlgorithmException {
 		ByteBuffer ch = ByteBuffer.allocate((this.remoteHandshake != null ? this.remoteHandshake.capacity() : 0) + this.buffer.capacity());
 		if (this.remoteHandshake != null) {
 			this.remoteHandshake.rewind();
@@ -301,14 +301,18 @@ public final class WebSocket {
 	}
 
 	private void completeHandshake(byte[] handShakeBody) throws IOException, NoSuchAlgorithmException {
-		byte[] handshakeBytes = this.remoteHandshake.array();
-		String handshake = new String(handshakeBytes, UTF8_CHARSET);
+		//byte[] handshakeBytes = this.remoteHandshake.array();
+		 //String handshake = new String(handshakeBytes, UTF8_CHARSET);
+		 
 		this.handshakeComplete = true;
-		if (this.wsl.onHandshakeReceived(this, handshake, handShakeBody)) {
+		/*
+		if (this.wsl.onHandshakeRecieved(this, handshake, handShakeBody)) {
 			this.wsl.onOpen(this);
 		} else {
 			close();
 		}
+		*/
+		this.wsl.onOpen(this);
 	}
 
 }
