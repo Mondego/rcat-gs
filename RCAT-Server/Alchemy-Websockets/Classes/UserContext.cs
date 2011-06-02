@@ -286,6 +286,7 @@ namespace Alchemy.Server.Classes
         /// </summary>
         public SemaphoreSlim ReceiveReady = new SemaphoreSlim(1);
         public SemaphoreSlim SendReady = new SemaphoreSlim(1);
+        public SemaphoreSlim EndSendReady = new SemaphoreSlim(1);
         /// <summary>
         /// A link to the server listener instance this client is currently hosted on.
         /// </summary>

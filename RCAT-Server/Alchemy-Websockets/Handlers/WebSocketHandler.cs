@@ -132,13 +132,19 @@ namespace Alchemy.Server.Handlers
                 //AContext.SendReady.Wait();
                 try
                 {
-                    AContext.Connection.Client.BeginSend(WrappedData, 0, WrappedData.Length, SocketFlags.None, ACallback, AContext);
+                    AContext.SendReady.Wait();
+                    if (AContext.Connection != null)
+                    {
+                        AContext.Connection.Client.BeginSend(WrappedData, 0, WrappedData.Length, SocketFlags.None, ACallback, AContext);
+                    }
                 }
                 catch
                 {
                     //Console.WriteLine("[WebSocketHandler]: Exception sending");
                     //AContext.SendReady.Release();
                 }
+
+                AContext.SendReady.Release();
         }
 
         /// <summary>
@@ -150,6 +156,7 @@ namespace Alchemy.Server.Handlers
             try
             {
                 Context AContext = (Context)AResult.AsyncState;
+                AContext.EndSendReady.Wait();
                 if (AContext != null && AContext.Connection != null)
                 {
                     try
@@ -161,10 +168,11 @@ namespace Alchemy.Server.Handlers
                     }
                     catch (Exception e)
                     {
-                        //Console.WriteLine("[WebSocketHandler]: Exception end send. " + e.Message + e.StackTrace);
+                        Console.WriteLine("[WebSocketHandler]: Exception end send. " + e.Message + e.StackTrace);
                         //AContext.SendReady.Release(); 
                     }
                 }
+                AContext.EndSendReady.Release();
             }
             catch
             {

@@ -63,7 +63,6 @@ namespace RCAT
                 "`left`=IF(timestamp < VALUES(timestamp), {2}, `left`),`timestamp`=IF(timestamp <= VALUES(timestamp), {3},`timestamp`),`z`=IF(timestamp <= VALUES(timestamp), {4}, `z`)", name, pos.t.ToString(), pos.l.ToString(), newstamp.ToString(), pos.z.ToString());
                 MySqlCommand cmd = new MySqlCommand(sql, conn);
                 cmd.ExecuteNonQuery();
-                
             }
             catch (Exception ex)
             {
