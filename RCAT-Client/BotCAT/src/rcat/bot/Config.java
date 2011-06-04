@@ -1,5 +1,6 @@
 package rcat.bot;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -22,8 +23,12 @@ public class Config {
 	static {
 		Properties prop = new Properties();
 		try {
-			prop.load(Config.class.getClassLoader().getResourceAsStream(
-			"bot.properties"));
+			//prop.load(Config.class.getClassLoader().getResourceAsStream("bot.properties"));
+			FileInputStream in = new FileInputStream("bot.properties"); // will fail if launched through Eclipse
+			prop.load(in);
+			in.close();
+			// http://download.oracle.com/javase/tutorial/essential/environment/properties.html
+			// http://www.javaworld.com/javaworld/javaqa/2003-08/01-qa-0808-property.html
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

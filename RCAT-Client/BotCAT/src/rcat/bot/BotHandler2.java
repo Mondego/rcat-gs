@@ -26,7 +26,7 @@ public class BotHandler2 extends WebSocketClient {
 	int leftToWatch;
 	long latencyStart;
 	ArrayList<String> onlineUsers;
-	
+
 	public BotHandler2(BotManager bm, int num, long time, URI uri, WebSocketDraft draft) {
 		super(uri, draft);
 		this.millisOrigin = time; //all bots share the same t=0
@@ -35,31 +35,38 @@ public class BotHandler2 extends WebSocketClient {
 		sb = new StringBuilder();
 		//System.out.println("Bot created.");
 	}
-	
+
 	/**
 	 * Bot's position just changed. Track 
 	 */
 	public void changeTrackedPositionAndLog(int top, int left) {
+		long now = System.currentTimeMillis();
+		// re-init the variables to be logged
+		if(this.latency != -1) { // the message to look for arrived 
+			sb.append(this.botId + "," 
+					+ this.onlineUsers.size() + "," 
+					+ (now - this.millisOrigin) + "," 
+					+ (now - this.lastLogTime) + "," 
+					+ this.numPosMsgReceived + ","
+					+ this.latency + "\n");
+			this.lastLogTime = now;
+			this.latency = -1;
+			this.numPosMsgReceived = 0;
+		}
+		// whether or not I received the msg to look at, change the msg to look at 
 		this.topToWatch = top;
 		this.leftToWatch = left;
-		this.latencyStart = System.currentTimeMillis();
-		//System.out.println("bot-" + this.botId + ":" + (System.currentTimeMillis() - this.millisOrigin) + " \t " + msg);
-		// re-init the variables to be logged
-		long now = System.currentTimeMillis();
-		sb.append(this.botId + "," + this.onlineUsers.size() + "," + (now - this.millisOrigin) + "," + (now - this.lastLogTime) + "," + this.numPosMsgReceived + "," + this.latency + "\n");
-		this.lastLogTime = now;
-		this.numPosMsgReceived = 0;
-		
+		this.latencyStart = now;
+
 	}
 
 	// flush the string buffer to disk
-	public void flushLog() {
+	public synchronized void flushLog() {
 		IO.writeToExistingFile(sb.toString(), Config.LOG_FILE, "UTF-8");
 		// make a new sb
-		sb = null;
-		sb = new StringBuilder();
+		sb.delete(0, sb.length());
 	}
-	
+
 	@Override
 	public void send(String msg) {
 		try {
@@ -82,7 +89,7 @@ public class BotHandler2 extends WebSocketClient {
 				this.onlineUsers.remove(discoUserName);
 				//System.out.println("Bot "+ this.botId +" : removed user " + discoUserName + " from local game state");
 				break;
-				
+
 			case 2: //pos update
 				this.numPosMsgReceived ++;
 				JSONObject pos = data.getJSONObject("p");
@@ -97,7 +104,7 @@ public class BotHandler2 extends WebSocketClient {
 					this.onlineUsers.add(coUserName2);
 					//System.out.println("Bot "+ this.botId +" : added user " + coUserName2 + " to local game state");
 				}
-				
+
 				break;
 			case 3: //on connect: list of all connected users
 				JSONArray users = data.getJSONArray("Users");
@@ -155,21 +162,21 @@ public class BotHandler2 extends WebSocketClient {
 		Timer ctimer;
 		int numMsgSent;
 		int botid; 
-		
+
 		public BotManager(final int num, long time, final URI uri, final int numMsg) {
-					
+
 			//this.r = new Random(Thread.currentThread().getId() + Config.MACHINE_SEED);
 			//this.top = r.nextInt(Config.MAX_TOP);
 			//this.left = r.nextInt(Config.MAX_LEFT);
-			
+
 			this.top = 0; //0 is just a hardcoded value so that I can see bots popping on the screen and disappear later on
 			this.left = Config.MACHINE_SEED + num;
-			
+
 			// connect
 			cc = new BotHandler2(this, num, time, uri, WebSocketDraft.DRAFT76);
 			cc.connect();
 			this.botid = num;
-			
+
 			// send	task
 			doUpdatePosAndSend = new TimerTask() {
 				@Override
@@ -206,7 +213,7 @@ public class BotHandler2 extends WebSocketClient {
 				}
 			};
 		} 		//end of botmanager constructor
-		
+
 		/**
 		 * called by bothandler when connection has been made
 		 * then manager can start sending msg
@@ -216,7 +223,7 @@ public class BotHandler2 extends WebSocketClient {
 			this.numMsgSent = -2; //yeah thats weird, but otherwise the log says it took us 900ms to send 1000ms of msg ...
 			this.timer.scheduleAtFixedRate(doUpdatePosAndSend, Config.SLEEP_START, (int) (1000/Config.FREQ));
 		}
-		
+
 		/**
 		 * return a string of the current bot position 
 		 */
@@ -224,7 +231,7 @@ public class BotHandler2 extends WebSocketClient {
 			// 666 is just a dummy number, we dont use z for now
 			return("{\"t\":" + this.top + ",\"l\":" + this.left + ",\"z\":" + 666 + "}"); 
 		}
-		
+
 		/**
 		 * update bot's current position (either up or down)
 		 */
@@ -245,11 +252,11 @@ public class BotHandler2 extends WebSocketClient {
 			default:
 				System.out.println("Error in switch case of posupdate");
 			}
-			*/
+			 */
 			this.top = this.top + Config.TOP_SHIFT; //bot keeps going down
 		}
-		
-		
+
+
 		/**
 		 * getters for top and left
 		 */
@@ -259,7 +266,7 @@ public class BotHandler2 extends WebSocketClient {
 		private int getLeft() {
 			return this.left;
 		}
-		
+
 		/**
 		 * print in stdout the thread/bot id and time since bot creation
 		 * @param msg the message to print
