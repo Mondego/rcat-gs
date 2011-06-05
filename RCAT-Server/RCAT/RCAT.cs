@@ -196,7 +196,12 @@ namespace RCAT
                         List<string> commands = tmp.ToList<string>();
 
                         if (RContext.IsTruncated)
-                            commands[0] = RContext.leftover + commands[0];
+                        {
+                            if (commands.Count > 0)
+                                commands[0] = RContext.leftover + commands[0];
+                            else
+                                commands.Add(RContext.leftover + "\0");
+                        }
                         if (values.EndsWith("\0"))
                             RContext.IsTruncated = false;
                         else

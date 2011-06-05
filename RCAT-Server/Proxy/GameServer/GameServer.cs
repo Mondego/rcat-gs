@@ -166,9 +166,14 @@ namespace Proxy
                     string values = UTF8Encoding.UTF8.GetString(SContext.buffer, 0, received);
                     string[] tmp = values.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
                     List<string> commands = tmp.ToList<string>();
-                    
+
                     if (SContext.IsTruncated)
+                    {
+                        if (commands.Count > 0)
                             commands[0] = SContext.leftover + commands[0];
+                        else
+                            commands.Add(SContext.leftover + "\0");
+                    }
                     if (values.EndsWith("\0"))
                         SContext.IsTruncated = false;
                     else
