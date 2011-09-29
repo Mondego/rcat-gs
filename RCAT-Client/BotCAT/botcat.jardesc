@@ -11,11 +11,6 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
-        <javaElement handleIdentifier="=BotCAT/src&lt;json"/>
-        <javaElement handleIdentifier="=BotCAT/src&lt;net.tootallnate.websocket"/>
-        <javaElement handleIdentifier="=BotCAT/src&lt;rcat.bot"/>
-        <file path="/BotCAT/.project"/>
-        <file path="/BotCAT/.classpath"/>
-        <javaElement handleIdentifier="=BotCAT/src&lt;net.tootallnate.example"/>
+        <javaElement handleIdentifier="=BotCAT/src"/>
     </selectedElements>
 </jardesc>

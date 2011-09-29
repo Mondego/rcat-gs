@@ -6,7 +6,6 @@ import java.util.Properties;
 
 public class Config {
 	public static String SERVER_ADDR;
-	public static int NUM_BOTS;
 	public static int NUM_MSG;
 	public static int FREQ;
 	public static int SLEEP_CLOSE;
@@ -20,6 +19,8 @@ public class Config {
 	public static int FLUSH_FREQ;
 	public static int LOG_FREQ;
 	public static int MACHINE_SEED;
+	public static int NUM_LOGBOTS;
+	public static int NUM_DUMBOTS;
 	static {
 		Properties prop = new Properties();
 		try {
@@ -33,7 +34,6 @@ public class Config {
 			e.printStackTrace();
 		}
 		SERVER_ADDR = prop.getProperty("server.addr");
-		NUM_BOTS = Integer.parseInt(prop.getProperty("num.bots"));
 		NUM_MSG = Integer.parseInt(prop.getProperty("num.msg"));
 		DELAY_BOTS = Integer.parseInt(prop.getProperty("delay.between.bots"));
 		FREQ = Integer.parseInt(prop.getProperty("freq"));
@@ -47,6 +47,8 @@ public class Config {
 		FLUSH_FREQ = Integer.parseInt(prop.getProperty("flush.freq"));
 		LOG_FREQ = Integer.parseInt(prop.getProperty("log.freq"));
 		MACHINE_SEED = Integer.parseInt(prop.getProperty("machine.seed"));
+		NUM_LOGBOTS = Integer.parseInt(prop.getProperty("num.logbots"));
+		NUM_DUMBOTS = Integer.parseInt(prop.getProperty("num.dumbots"));
 		
 
 	}

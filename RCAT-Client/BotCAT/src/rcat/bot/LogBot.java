@@ -14,7 +14,7 @@ import net.tootallnate.websocket.WebSocketClient;
 import net.tootallnate.websocket.WebSocketDraft;
 
 
-public class BotHandler2 extends WebSocketClient {
+public class LogBot extends WebSocketClient {
 	long millisOrigin; //initiated in BotManager
 	long lastLogTime; //millis since last time I flushed to disk
 	BotManager bm;
@@ -27,7 +27,7 @@ public class BotHandler2 extends WebSocketClient {
 	long latencyStart;
 	ArrayList<String> onlineUsers;
 
-	public BotHandler2(BotManager bm, int num, long time, URI uri, WebSocketDraft draft) {
+	public LogBot(BotManager bm, int num, long time, URI uri, WebSocketDraft draft) {
 		super(uri, draft);
 		this.millisOrigin = time; //all bots share the same t=0
 		this.botId = num;
@@ -133,13 +133,13 @@ public class BotHandler2 extends WebSocketClient {
 		this.lastLogTime = System.currentTimeMillis();
 		this.onlineUsers = new ArrayList<String>();
 		bm.notifyConnected();
-		System.out.println("Bot "+ botId +" connected.");
+		System.out.println("Logging Bot "+ botId +" connected.");
 		this.latencyStart = System.currentTimeMillis();
 	}
 
 	@Override
 	public void onClose() {
-		System.out.println("Bot "+ botId +" disconnected.");
+		System.out.println("Logging Bot "+ botId +" disconnected.");
 		onlineUsers.clear();
 	}
 
@@ -151,7 +151,7 @@ public class BotHandler2 extends WebSocketClient {
 	public static class BotManager {
 		public static final long serialVersionUID = -6056260699202978657L;
 
-		public BotHandler2 cc;
+		public LogBot cc;
 		int top;
 		int left;
 		Random r;
@@ -173,7 +173,7 @@ public class BotHandler2 extends WebSocketClient {
 			this.left = Config.MACHINE_SEED + num;
 
 			// connect
-			cc = new BotHandler2(this, num, time, uri, WebSocketDraft.DRAFT76);
+			cc = new LogBot(this, num, time, uri, WebSocketDraft.DRAFT76);
 			cc.connect();
 			this.botid = num;
 
