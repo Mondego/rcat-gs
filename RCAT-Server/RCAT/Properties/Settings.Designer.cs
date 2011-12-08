@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Proxy.Properties {
+namespace RCAT.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -59,27 +59,81 @@ namespace Proxy.Properties {
             }
         }
         
-        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("20")]
-        public int log_frequency {
+        [global::System.Configuration.DefaultSettingValueAttribute("82")]
+        public int proxyport {
             get {
-                return ((int)(this["log_frequency"]));
+                return ((int)(this["proxyport"]));
             }
-            set {
-                this["log_frequency"] = value;
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("opensim.ics.uci.edu")]
+        public string proxyurl {
+            get {
+                return ((string)(this["proxyurl"]));
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("roundtrip.log")]
-        public string log_roundtrip {
+        [global::System.Configuration.DefaultSettingValueAttribute("opensim.ics.uci.edu")]
+        public string mysql_server {
             get {
-                return ((string)(this["log_roundtrip"]));
+                return ((string)(this["mysql_server"]));
             }
             set {
-                this["log_roundtrip"] = value;
+                this["mysql_server"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("rcat")]
+        public string mysql_user {
+            get {
+                return ((string)(this["mysql_user"]));
+            }
+            set {
+                this["mysql_user"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("isnotamused")]
+        public string mysql_pass {
+            get {
+                return ((string)(this["mysql_pass"]));
+            }
+            set {
+                this["mysql_pass"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("rcat")]
+        public string mysql_database {
+            get {
+                return ((string)(this["mysql_database"]));
+            }
+            set {
+                this["mysql_database"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3306")]
+        public string mysql_port {
+            get {
+                return ((string)(this["mysql_port"]));
+            }
+            set {
+                this["mysql_port"] = value;
             }
         }
     }

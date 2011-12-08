@@ -5,6 +5,7 @@ using System.Text;
 using MySql.Data;
 using MySql.Data.MySqlClient;
 using System.Net;
+using log4net;
 using RCAT.Connectors;
 
 namespace RCAT
@@ -13,7 +14,7 @@ namespace RCAT
     {
 
         public static String userTableName = "users";
-        public String connStr = "server="+Properties.Settings.Default.mysql_server+";user="+Properties.Settings.Default.mysql_user+";database="+Properties.Settings.Default.mysql_database+";port="+Properties.Settings.Default.mysql_port+";password="+Properties.Settings.Default.mysql_pass+";";
+        public String connStr = "server=" + Properties.Settings.Default.mysql_server + ";user=" + Properties.Settings.Default.mysql_user + ";database=" + Properties.Settings.Default.mysql_database + ";port=" + Properties.Settings.Default.mysql_port + ";password=" + Properties.Settings.Default.mysql_pass + ";pooling=true;Min Pool Size=50;Max Pool Size=200;Connection Lifetime=0;";
         public String newTable = @"CREATE TABLE `"+ userTableName + @"` (
   `name` bigint(20) unsigned NOT NULL DEFAULT '0',
   `top` int(11) NOT NULL DEFAULT '0',
@@ -22,6 +23,12 @@ namespace RCAT
   `timestamp` bigint(20) NOT NULL DEFAULT '0',
   PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+        protected static ILog Log = null;
+
+        public MySqlConnector(ILog log)
+        {
+            Log = log;
+        }
 
         public override void Connect()
         {
@@ -43,6 +50,7 @@ namespace RCAT
             }
             conn.Close();
             Console.WriteLine("Done.");
+            Log.Info("MySql Connected");
         }
 
         public Boolean CheckConnection()
@@ -147,11 +155,13 @@ namespace RCAT
         {
             MySqlConnection conn = new MySqlConnection(connStr);
             string[] allUsers = null;
+            int count = 0;
+            int i = 0;
             try
             {
                 conn.Open();
-                int count = GetCount();
-                int i = 0;
+                count = GetCount();
+                
                 allUsers = new string[count];
 
                 string sql = "SELECT `name` FROM " + userTableName;
@@ -166,9 +176,14 @@ namespace RCAT
                 }
                 rdr.Close();
             }
+            catch (IndexOutOfRangeException)
+            {
+                Log.Debug("[MySqlConnector]: Index out range exception. Count: " + count.ToString() + ". Exception in: " + i.ToString());
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Log.Error(ex);
+                //Console.WriteLine(ex.ToString());
             }
             conn.Close();
             return allUsers;

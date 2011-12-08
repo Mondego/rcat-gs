@@ -102,7 +102,7 @@ namespace RCAT
         /// <summary>
         /// Choose which data connector to use, the MySql or memory;
         /// </summary>
-        public static DataConnector dataConnector = new MySqlConnector();
+        public static DataConnector dataConnector = new MySqlConnector(Log);
         //public static DataConnector dataConnector = new MemoryConnector();
 
         /// <summary>
