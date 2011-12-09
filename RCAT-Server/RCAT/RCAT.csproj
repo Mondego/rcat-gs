@@ -73,6 +73,7 @@
   <ItemGroup>
     <Compile Include="Connectors\DataConnector.cs" />
     <Compile Include="Connectors\MemoryConnector.cs" />
+    <Compile Include="Connectors\MySqlCacheConnector.cs" />
     <Compile Include="Connectors\MySqlConnector.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>

@@ -13,7 +13,7 @@ namespace RCAT.Connectors
         public abstract User GetUser(string userName);
         public abstract string[] GetAllUsersNames();
         public abstract User[] GetAllUsers();
-        public ulong IPStringToulong(String userName)
+        public static ulong IPStringToulong(String userName)
         {
             String[] splitted = userName.Split(':');
             IPAddress myIp = IPAddress.Parse(splitted[0]);
@@ -26,7 +26,7 @@ namespace RCAT.Connectors
             return intAddress + ulong.Parse(splitted[1]);
         }
 
-        public String IPulongToString(ulong key)
+        public static String IPulongToString(ulong key)
         {
             ulong port = (key << 32) >> 32;
             int ip = (int)(key >> 32);
