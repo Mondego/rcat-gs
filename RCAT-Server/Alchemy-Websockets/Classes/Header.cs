@@ -21,9 +21,6 @@ along with Alchemy Websockets.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -36,7 +33,9 @@ namespace Alchemy.Server.Classes
     public enum Protocol
     {
         None = -1,
-        WebSocket = 0,
+        WebSocketHybi10 = 0,
+        WebSocketHybi00 = 1,
+        FlashSocket = 2
     }
 
     /// <summary>
@@ -96,7 +95,7 @@ namespace Alchemy.Server.Classes
         /// Initializes a new instance of the <see cref="Header"/> class.
         /// Accepts a string that represents an HTTP header.
         /// </summary>
-        /// <param name="Data">The data.</param>
+        /// <param name="data">The data.</param>
         public Header(string Data)
         {
             try
@@ -134,19 +133,37 @@ namespace Alchemy.Server.Classes
                 RequestPath = SomeFields["path"].Captures[0].Value.Trim();
                 Method = SomeFields["connect"].Captures[0].Value.Trim();
 
-                string[] PathExplode = RequestPath.Split('/');
-                string ProtocolString = string.Empty;
-                if (PathExplode.Length > 0)
-                    ProtocolString = PathExplode[PathExplode.Length - 1].ToLower().Trim();
-                switch (ProtocolString)
+                string Version = string.Empty;
+                try
                 {
-                    case "websocket":
-                        this.Protocol = Protocol.WebSocket;
-                        break;
-                    default:
-                        this.Protocol = Protocol.None;
-                        break;
+                    Version = Fields["sec-websocket-version"];
                 }
+                catch (Exception){}
+                
+                if(Int32.Parse(Version) >= 8)
+                {
+                    this.Protocol = Protocol.WebSocketHybi10;
+                }
+                else
+                {
+                    string[] PathExplode = RequestPath.Split('/');
+                    string ProtocolString = string.Empty;
+                    if (PathExplode.Length > 0)
+                        ProtocolString = PathExplode[PathExplode.Length - 1].ToLower().Trim();
+                    switch (ProtocolString)
+                    {
+                        case "websocket":
+                            this.Protocol = Protocol.WebSocketHybi00;
+                            break;
+                        case "flashsocket":
+                            this.Protocol = Protocol.FlashSocket;
+                            break;
+                        default:
+                            this.Protocol = Protocol.None;
+                            break;
+                    }
+                }
+
             }
             catch{ /* Ignore bad header */ }
         }
